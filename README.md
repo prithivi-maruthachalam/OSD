@@ -1,7 +1,7 @@
 # OS Development
 Prithivi's project main directory
 ## DIR structure
-.
+.  
 ├── kernel  
 │   ├── arch  
 │   │   └── i386  
