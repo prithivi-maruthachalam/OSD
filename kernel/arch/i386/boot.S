@@ -1,3 +1,10 @@
+/* 
+Sets up the multiboot header for GRUB2 to interface with
+Sets up the stack
+Calls the init function in crti
+Calls the kernel main
+*/
+
 # constants for the multiboot header
 .set ALIGN, 1 << 0   # align things on page boundaries
 .set MEMINFO, 1 << 1 # need memory map
@@ -26,12 +33,17 @@ stack_top: # guess, stupid
 .global _start # needs to be gloabal so that the linker can find it
 .type _start, @function # tells the assembler that _start is a function
 .start: 
+    /*
+        NOTE: We don't need to keep track of the stack base(%ebp)
+        It's only a needed in functions called from here, cause things can get lost when there are
+        lot of thing to be stored(local variables and so on)
+    */
     movl $stack_top, %esp # move the address of stack top into the stack pointer | stack grows downward so forget about stack_bottom
-    call _init # init comes first in order to set up the C runtime
+    call _init # init comes first in order to set up crtbegin.o - perform initialisations for C libraries
+    ; NOTE: call pushes the return address to the stack. Don't worry about that
     call kernel_main # guess again, stupid
 
     # it shouldn't get here at all
     cli # certain interrupts will start it up again, so we'll disable those
 1:  hlt
     jmp 1b # loop back
-    
