@@ -28,7 +28,7 @@ SECTIONS
     .bss BLOCK(4K) : ALIGN(4K)
     {
         *(.COMMON) /* Basically unitialized GLOBAL variables. They only exist during the
-        linking stage. The linker then decides to move these to an 
+        linking stage. Ultimately, they get initialised to 0. The linker then decides to move these to an 
         appropriate section (.bss or .data) */
         *(.bss) /* We set up the stack as unitialized Read-Write data */
     }
