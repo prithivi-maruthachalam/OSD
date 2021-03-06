@@ -6,7 +6,7 @@ void kmain(void) {
 
 	terminal_init();
 	
-	kprintf("Hello Kernel!");
+	printf("Hello Kernel!");
 
 }
 
