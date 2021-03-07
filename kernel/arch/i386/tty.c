@@ -67,5 +67,5 @@ void terminal_write(const char *str, size_t size)
 // TODO: strlen in libc
 void terminal_writestring(const char *str)
 {
-    terminal_putchar(str, strlen(str))
+    terminal_putchar(str, strlen(str));
 }
