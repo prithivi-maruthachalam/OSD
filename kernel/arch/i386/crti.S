@@ -31,7 +31,7 @@ _init:
 ; fini is almost pointless
 .section .fini
 .global _fini
-.type _fin, @function
+.type _fini, @function
 _fini:
     push %ebp
     movl %esp, %ebp
