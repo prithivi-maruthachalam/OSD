@@ -7,7 +7,7 @@
 int putchar(int ch)
 {
     unsigned char character = (unsigned char)ch;
-#if defined(__is_link)
+#if defined(__is_libk)
     terminal_putchar(character));
 #else
     // TODO: Write to stdout
