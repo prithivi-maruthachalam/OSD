@@ -40,7 +40,7 @@ int printf(const char *restrict format_str, ...)
 
             // Take the rest of the string, until a % as a substring and print the whole thing
             size_t subLength = 1; // we start at one, so including the last one is fine
-            while (format_str[subLength] != '%')
+            while (format_str[subLength] && format_str[subLength] != '%')
             {
                 subLength++;
             }
@@ -81,7 +81,7 @@ int printf(const char *restrict format_str, ...)
                 return -1;
             }
 
-            if (print(&c, 1) == false)
+            if (print(&c, sizeof(c)) == false)
             {
                 return -1;
             }
@@ -106,10 +106,11 @@ int printf(const char *restrict format_str, ...)
                 return -1;
             }
             bytes_written += len;
-            format_str += len;
+            format_str++;
         }
         else
         {
+            // Print until the end of the format string
             size_t len = strlen(format_str);
             if (max_remaining < len)
             {
