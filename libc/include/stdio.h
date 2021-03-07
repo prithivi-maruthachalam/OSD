@@ -3,6 +3,7 @@
 
 #include <sys/cdefs.h>
 
+#define EOF -1
 // Not adding extern C for now -- C++ needs that to interface with this library
 
 int printf(const char *__restrict, ...); //ellipsis - indeterminate number of arguments
