@@ -54,7 +54,6 @@ int printf(const char* restrict format, ...) {
 			char c = (char) va_arg(params, int);
 		
 			if (!rem) return -1;
-
 			if (!print(&c, sizeof(c))) return -1;
 
 			written++;
@@ -67,12 +66,21 @@ int printf(const char* restrict format, ...) {
 			size_t len = strlen(str);
 
 			if (len > rem) return -1;
-		
 			if (!print(str, len)) return -1;
 			
 			written += len;
 		
-		} else continue;
+		} else {
+
+			size_t len = strlen(format);
+
+			if (len > rem) return -1;
+			if (!print(format len)) return -1;
+		
+			format += len;
+			written += len;
+
+		}
 
 	}
 
