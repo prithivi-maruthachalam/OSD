@@ -45,6 +45,7 @@ int printf(const char* restrict format, ...) {
 		
 		}	
 
+		format++;
 		
 		if (*format == 'c') {
 		
