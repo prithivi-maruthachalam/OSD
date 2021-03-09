@@ -45,6 +45,7 @@ void terminal_init()
 /* Puts a char in the buffer at the current (row, col) and current color. It also increments current row
 and column as required, resetting them to 0 when there's an overflow */
 // TODO: Add scrolling
+// TODO: Handle newline
 void terminal_putchar(char c)
 {
     const size_t index = tty_row * VGA_WIDTH + tty_column;
