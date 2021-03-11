@@ -1,2 +1,0 @@
-i686-elf-gcc --sysroot=/home/prithivi/Projects/theOS/groundOS/sysroot -isystem=/usr/include -c stdio/printf.c -o stdio/printf.libk.o -o2 -g -ffreestanding -Wall -Wextra -Iinclude -D__is_libk
-i686-elf-gcc --sysroot=/home/prithivi/Projects/theOS/groundOS/sysroot -isystem=/usr/include -c stdio/putchar.c -o stdio/putchar.libk.o -o2 -g -ffreestanding -Wall -Wextra -Iinclude -D__is_libk
