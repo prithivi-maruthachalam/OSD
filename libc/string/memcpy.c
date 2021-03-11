@@ -4,8 +4,8 @@
 // here, it discourages overlap. Same memory location can't be accessed by both dest and src
 void *memcpy(void *restrict dest, const void *restrict src, size_t size)
 {
-    const unsigned char *src_ptr = (const unsigned *)src;
-    unsigned char *dest_ptr = (unsigned *)dest;
+    const unsigned char *src_ptr = (const unsigned char *)src;
+    unsigned char *dest_ptr = (unsigned char *)dest;
 
     for (size_t i = 0; i < size; i++)
     {

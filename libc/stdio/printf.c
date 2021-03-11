@@ -26,7 +26,7 @@ int printf(const char *restrict format_str, ...)
 
     int bytes_written = 0;
     // For now, we'll do string and characters alone
-    while (format_str != '\0')
+    while (*format_str != '\0')
     {
         size_t max_remaining = INT_MAX - bytes_written;
         // since it consumes a %, we'll ned to enter this condition atleat one character before the %
@@ -73,7 +73,7 @@ int printf(const char *restrict format_str, ...)
 
         if (*format_str == 'c')
         {
-            const char c = va_arg(params, char);
+            const char c = (const char)va_arg(params, int);
             if (max_remaining < 1)
             {
                 // set errorno

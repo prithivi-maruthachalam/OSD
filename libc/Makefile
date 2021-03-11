@@ -1,6 +1,5 @@
-TARGET_PREFIX=$(FILE_PREFIX)/local
-INCLUDE_DIR=$(TARGET_PREFIX)/include
-LIB_DIR=$(TARGET_PREFIX)/lib
+INCLUDE_DIR=$(FILE_PREFIX)/include
+LIB_DIR=$(FILE_PREFIX)/lib
 
 #objs that we created
 FREE_OBJS=\
@@ -31,21 +30,19 @@ BIN_ARCHIVES=libk.a
 
 
 #flags
-CFLAGS=-o2 -g -ffreestanding -Wall -Wextra -Iinclude
-LIBK_CFLAGS=$(CFLAGS) -D__is_libk
+CFLAGS=-O2 -g -ffreestanding -Wall -Wextra
+LIBK_CFLAGS=$(CFLAGS) -D__is_libk -Iinclude
 
 
 
-.PHONY: install-headers install-libs
-
-
-
-install: install-headers install-libs
+.PHONY: install-headers install-libs clean object-install
 
 # basically just putting the headers into the sysroot include directory
 install-headers:
+	echo "libc: Installing headers"
 	mkdir -p $(DEST_DIR)$(INCLUDE_DIR)
 	cp -R --preserve=timestamps include/* $(DEST_DIR)$(INCLUDE_DIR)/
+	echo "libc: Done installing headers\n\n"
 
 # to create the bin archives
 libk.a: $(LIBK_OBJS)
@@ -61,6 +58,13 @@ libc.a: $(OBJS)
 
 #creating the archive and then placing it in sysroot's lib directory
 install-libs: $(BIN_ARCHIVES)
+	echo "libc: Installing libs"
 	mkdir -p $(DEST_DIR)$(LIB_DIR)
 	cp $(BIN_ARCHIVES) $(DEST_DIR)$(LIB_DIR)/
-	
+	echo "libc: Done installing libs\n\n"
+
+clean:
+	rm -f $(BIN_ARCHIVES)
+	rm -f $(LIBK_OBJS)
+
+object-install: install-libs
