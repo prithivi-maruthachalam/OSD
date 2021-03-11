@@ -12,9 +12,9 @@ export CC="$HOST-gcc"
 export AS="$HOST-as"
 
 # filesystem
-export PRE="/usr"
-export LIB="$PRE/lib"
-export INCLUDE_DIR="$PRE/include"
+export FILE_PREFIX="/usr"
+export LIB_DIR="$FILE_PREFIX/lib"
+export INCLUDE_DIR="$FILE_PREFIX/include"
 export BOOT_DIR="/boot"
 
 # sysroot
