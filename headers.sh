@@ -4,6 +4,7 @@
 . ./config.sh
 
 # first "installer" after config, so make sysroot dir
+echo "Doing headers shit"
 mkdir -p $SYSROOT
 
 for FOLDER in $MAJOR_FOLDERS

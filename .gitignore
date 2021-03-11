@@ -1,1 +1,3 @@
 t_*
+sysroot/
+*.o

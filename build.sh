@@ -3,8 +3,9 @@
 
 . ./headers.sh
 
-# for FOLDER in $MAJOR_FOLDERS
-# do
-#     cd $FOLDER && DEST_DIR="$SYSROOT" make install
-#     cd ../
-# done
+echo "Doing build shit"
+for FOLDER in $MAJOR_FOLDERS
+do
+    cd $FOLDER && DEST_DIR="$SYSROOT" make object-install
+    cd ../
+done
