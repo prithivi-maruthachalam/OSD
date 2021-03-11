@@ -1,5 +1,8 @@
-CFLAGS=-02 -g -ffreestanding -Wall -Wextra
+TARGET_PREFIX=$(FILE_PREFIX)/local
+INCLUDE_DIR=$(TARGET_PREFIX)/include
+LIB_DIR=$(TARGET_PREFIX)/lib
 
+#objs that we created
 FREE_OBJS=\
 $(ARCH_FREEOBJS) \
 stdio/printf.o \
@@ -12,22 +15,52 @@ string/memmove.o \
 string/memset.o \
 string/strlen.o \
 
+#we will get ehere later from libc.
 HOSTED_OBJS=\
 $(ARCH_HOSTEDOBJS)
 
+#libc objs - also contains the free objs
 OBJS=$(FREE_OBJS) $(HOSTED_OBJS)
-
-TARGET_DIR=$(FILE_PREFIX)/local
-INCLUDE_DIR=$(TARGET_DIR)/include
-LIB_DIR=$(TARGET_DIR)/lib
+#libk objs - just the free standing ones
+LIBK_OBJS=$(FREE_OBJS:.o=.libk.o)
 
 
-.PHONY: install install-headers install-libs
+#the requied binaries - the archive
+#we'll put in a libc.a in the future
+BIN_ARCHIVES=libk.a 
+
+
+#flags
+CFLAGS=-o2 -g -ffreestanding -Wall -Wextra -Iinclude
+LIBK_CFLAGS=$(CFLAGS) -D__is_libk
+
+
+
+.PHONY: install-headers install-libs
 
 
 
 install: install-headers install-libs
 
+# basically just putting the headers into the sysroot include directory
 install-headers:
 	mkdir -p $(DEST_DIR)$(INCLUDE_DIR)
-	cp -R --preserve=timestamps include/. $(DEST_DIR)$(INCLUDE_DIR)/
+	cp -R --preserve=timestamps include/* $(DEST_DIR)$(INCLUDE_DIR)/
+
+# to create the bin archives
+libk.a: $(LIBK_OBJS)
+	$(AR) rcs libk.a $(LIBK_OBJS)
+
+libc.a: $(OBJS)
+	$(AR) rcs libc.a $(OBJS)
+
+%.o: %.c
+	$(CC) -c $< -o $@ $(CFLAGS)
+%.libk.o: %.c
+	$(CC) -c $< -o $@ $(LIBK_CFLAGS)
+
+#creating the archive and then placing it in sysroot's lib directory
+install-libs: $(BIN_ARCHIVES)
+	mkdir -p $(DEST_DIR)$(LIB_DIR)
+	cp $(BIN_ARCHIVES) $(DEST_DIR)$(LIB_DIR)/
+	

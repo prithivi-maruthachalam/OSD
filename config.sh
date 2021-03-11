@@ -4,7 +4,7 @@
 MAJOR_FOLDERS="libc kernel"
 
 # for the host prefix
-export HOST="i386-elf"
+export HOST="i686-elf"
 
 # binutils
 export AR="$HOST-ar" # to create the archive of .o files
