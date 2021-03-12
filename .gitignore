@@ -4,3 +4,5 @@ isodir/
 *.kernel
 *.o
 *.d
+*.iso
+*.a

@@ -4,5 +4,13 @@
 void kernel_main()
 {
     terminal_init();
-    printf("Hello from the kernel!\n");
+    terminal_putchar('t');
+    terminal_putchar('t');
+    terminal_putchar('t');
+    terminal_putchar('t');
+    terminal_putchar('t');
+    terminal_putchar('t');
+    terminal_putchar('t');
+    terminal_putchar('t');
+    terminal_putchar('t');
 }

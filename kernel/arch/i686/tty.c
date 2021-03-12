@@ -27,12 +27,13 @@ static uint16_t *tty_buffer;
 /* Initialises video memory by filling all of it with the space character */
 void terminal_init()
 {
-    tty_row = tty_column = 0;
+    tty_row = 0;
+    tty_column = 0;
     tty_color = vga_entry_color(VGA_COLOR_BLUE, VGA_COLOR_GREEN);
     tty_buffer = (uint16_t *)VGA_MEMORY;
     for (size_t y = 0; y < VGA_HEIGHT; y++)
     { // y < 25
-        for (size_t x = 0; y < VGA_WIDTH; x++)
+        for (size_t x = 0; x < VGA_WIDTH; x++)
         {
             // calculate index
             // set index to empty string
