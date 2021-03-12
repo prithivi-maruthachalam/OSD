@@ -1,5 +1,5 @@
 #!/bin/sh
-# set -e
+set -e
 
 . ./build.sh # this will create and populate sysroot with the executables
 

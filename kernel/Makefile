@@ -41,28 +41,21 @@ theOS.kernel: $(OBJS) $(ARCH_DIR)/linker.ld
 	$(CC) -T $(ARCH_DIR)/linker.ld -o $@ $(CFLAGS) $(OBJS) $(LINK_FLAGS)
 
 %.o: %.c
-	$(CC) -MD -c $< -o $@ -std=gnu11 $(CFLAGS) $(LIBK_CFLAGS)
+	$(CC) -c $< -o $@ $(CFLAGS) $(LIBK_CFLAGS)
 
 %.o: %.S 
-	$(CC) -MD -c $< -o $@ $(CFLAGS) $(LIBK_CFLAGS)
+	$(CC) -c $< -o $@ $(CFLAGS) $(LIBK_CFLAGS)
 
 $(ARCH_DIR)/crtbegin.o $(ARCH_DIR)/crtend.o:
 	OBJ=`$(CC) $(CFLAGS) $(LIBK_CFLAGS) -print-file-name=$(@F)` && cp "$$OBJ" $@
-	echo $(OBJ)
-
 
 install-kernel: theOS.kernel
-	echo "kernel: installing .kernel"
 	mkdir -p $(DEST_DIR)$(BOOT_DIR)
 	cp theOS.kernel $(DEST_DIR)$(BOOT_DIR)/
-	echo "kernel: done installing .kernel\n\n"
-	pwd
 
 install-headers:
-	echo "kernel: installing headers"
 	mkdir -p $(DEST_DIR)$(INCLUDE_DIR)
 	cp -R --preserve=timestamps include/* $(DEST_DIR)$(INCLUDE_DIR)
-	echo "kernel: done installing headers\n\n"
 
 clean:
 	rm -f theOS.kernel

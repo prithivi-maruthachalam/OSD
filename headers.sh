@@ -1,13 +1,11 @@
 #!/bin/bash
-# set -e
+set -e
 
 . ./config.sh
 
 # first "installer" after config, so make sysroot dir
-echo "Doing headers shit"
 mkdir -p $SYSROOT
 
-echo "WE're in "$(pwd)
 for FOLDER in $MAJOR_FOLDERS
 do
     cd $FOLDER && DEST_DIR="$SYSROOT" make install-headers

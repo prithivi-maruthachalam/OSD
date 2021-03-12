@@ -4,5 +4,5 @@
 void kernel_main()
 {
     terminal_init();
-    terminal_writestring("test");
+    printf("testicles");
 }

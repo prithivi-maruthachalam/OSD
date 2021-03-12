@@ -39,10 +39,8 @@ LIBK_CFLAGS=$(CFLAGS) -D__is_libk -Iinclude
 
 # basically just putting the headers into the sysroot include directory
 install-headers:
-	echo "libc: Installing headers"
 	mkdir -p $(DEST_DIR)$(INCLUDE_DIR)
 	cp -R --preserve=timestamps include/* $(DEST_DIR)$(INCLUDE_DIR)/
-	echo "libc: Done installing headers\n\n"
 
 # to create the bin archives
 libk.a: $(LIBK_OBJS)
@@ -52,16 +50,14 @@ libc.a: $(OBJS)
 	$(AR) rcs libc.a $(OBJS)
 
 %.o: %.c
-	$(CC) -MD -c $< -o $@ -std=gnu11 $(CFLAGS)
+	$(CC) -c $< -o $@ $(CFLAGS)
 %.libk.o: %.c
-	$(CC) -MD -c $< -o $@ $(LIBK_CFLAGS)
+	$(CC) -c $< -o $@ $(LIBK_CFLAGS)
 
 #creating the archive and then placing it in sysroot's lib directory
 install-libs: $(BIN_ARCHIVES)
-	echo "libc: Installing libs"
 	mkdir -p $(DEST_DIR)$(LIB_DIR)
 	cp $(BIN_ARCHIVES) $(DEST_DIR)$(LIB_DIR)/
-	echo "libc: Done installing libs\n\n"
 
 clean:
 	rm -f $(BIN_ARCHIVES)
