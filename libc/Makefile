@@ -52,9 +52,9 @@ libc.a: $(OBJS)
 	$(AR) rcs libc.a $(OBJS)
 
 %.o: %.c
-	$(CC) -c $< -o $@ $(CFLAGS)
+	$(CC) -MD -c $< -o $@ -std=gnu11 $(CFLAGS)
 %.libk.o: %.c
-	$(CC) -c $< -o $@ $(LIBK_CFLAGS)
+	$(CC) -MD -c $< -o $@ $(LIBK_CFLAGS)
 
 #creating the archive and then placing it in sysroot's lib directory
 install-libs: $(BIN_ARCHIVES)
@@ -66,5 +66,6 @@ install-libs: $(BIN_ARCHIVES)
 clean:
 	rm -f $(BIN_ARCHIVES)
 	rm -f $(LIBK_OBJS)
+	rm -f $(LIBK_OBJS:.o=.d) *.d
 
 object-install: install-libs

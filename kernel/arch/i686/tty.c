@@ -28,16 +28,16 @@ static uint16_t *tty_buffer;
 void terminal_init()
 {
     tty_row = tty_column = 0;
-    tty_color = vga_entry_color(VGA_COLOR_BLUE, VGA_COLOR_BLACK);
-    tty_buffer = VGA_MEMORY;
+    tty_color = vga_entry_color(VGA_COLOR_BLUE, VGA_COLOR_GREEN);
+    tty_buffer = (uint16_t *)VGA_MEMORY;
     for (size_t y = 0; y < VGA_HEIGHT; y++)
     { // y < 25
         for (size_t x = 0; y < VGA_WIDTH; x++)
         {
             // calculate index
             // set index to empty string
-            size_t index = (y * VGA_WIDTH) + x;
-            tty_buffer[index] = vga_entry(' ', tty_color);
+            const size_t index = (y * VGA_WIDTH) + x;
+            tty_buffer[index] = vga_entry('x', tty_color);
         }
     }
 }
@@ -68,5 +68,5 @@ void terminal_write(const char *str, size_t size)
 // TODO: strlen in libc
 void terminal_writestring(const char *str)
 {
-    terminal_putchar(str, strlen(str));
+    terminal_write(str, strlen(str));
 }

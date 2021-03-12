@@ -1,3 +1,6 @@
 t_*
 sysroot/
+isodir/
+*.kernel
 *.o
+*.d

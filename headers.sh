@@ -7,6 +7,7 @@
 echo "Doing headers shit"
 mkdir -p $SYSROOT
 
+echo "WE're in "$(pwd)
 for FOLDER in $MAJOR_FOLDERS
 do
     cd $FOLDER && DEST_DIR="$SYSROOT" make install-headers

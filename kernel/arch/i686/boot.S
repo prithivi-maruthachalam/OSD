@@ -32,7 +32,7 @@ stack_top: # guess, stupid
 .section .text
 .global _start # needs to be gloabal so that the linker can find it
 .type _start, @function # tells the assembler that _start is a function
-.start: 
+_start: 
     /*
         NOTE: We don't need to keep track of the stack base(%ebp)
         It's only a needed in functions called from here, cause things can get lost when there are
@@ -40,7 +40,7 @@ stack_top: # guess, stupid
     */
     movl $stack_top, %esp # move the address of stack top into the stack pointer | stack grows downward so forget about stack_bottom
     call _init # init comes first in order to set up crtbegin.o - perform initialisations for C libraries
-    ; NOTE: call pushes the return address to the stack. Don't worry about that
+    # NOTE: call pushes the return address to the stack. Don't worry about that
     call kernel_main # guess again, stupid
 
     # it shouldn't get here at all

@@ -26,12 +26,12 @@ enum vga_color
 // Remember that static functions are only visible to their object files
 static inline uint8_t vga_entry_color(enum vga_color fg, enum vga_color bg)
 {
-    return fg | (bg << 4);
+    return (uint8_t)fg | (bg << 4);
 }
 
 static inline uint16_t vga_entry(unsigned char c, uint16_t color)
 {
-    return ((uint16_t)c | ((uint16_t)color) << 16);
+    return ((uint16_t)c | ((uint16_t)color) << 8);
 }
 
 #endif

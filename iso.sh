@@ -6,9 +6,9 @@
 mkdir -p isodir/boot/grub
 cp sysroot/boot/theOS.kernel isodir/boot/theOS.kernel
 cat > isodir/boot/grub/grub.cfg << EOF
-menuentr "theOS" {
+menuentry "theOS" {
     multiboot /boot/theOS.kernel
 }
 EOF
 
-mkdir -o grub-mkrescue theOS.iso
+grub-mkrescue -o theOS.iso isodir

@@ -10,3 +10,4 @@ done
 
 rm -rf sysroot
 rm -rf isodir
+rm *.iso
