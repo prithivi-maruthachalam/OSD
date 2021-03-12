@@ -29,7 +29,7 @@ void terminal_init()
 {
     tty_row = 0;
     tty_column = 0;
-    tty_color = vga_entry_color(VGA_COLOR_BLUE, VGA_COLOR_GREEN);
+    tty_color = vga_entry_color(VGA_COLOR_GREEN, VGA_COLOR_BLACK);
     tty_buffer = (uint16_t *)VGA_MEMORY;
     for (size_t y = 0; y < VGA_HEIGHT; y++)
     { // y < 25
@@ -38,7 +38,7 @@ void terminal_init()
             // calculate index
             // set index to empty string
             const size_t index = (y * VGA_WIDTH) + x;
-            tty_buffer[index] = vga_entry('x', tty_color);
+            tty_buffer[index] = vga_entry(' ', tty_color);
         }
     }
 }
