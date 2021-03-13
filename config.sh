@@ -5,12 +5,13 @@
 MAJOR_FOLDERS="libc kernel"
 
 # for the host prefix
-export HOST="i686-elf"
+export TARGET_HOST="i686-elf"
+export TARGET_ARCH=$(./target-to-arch.sh ${TARGET_HOST})
 
 # binutils
-export AR="$HOST-ar" # to create the archive of .o files
-export CC="$HOST-gcc"
-export AS="$HOST-as"
+export AR="$TARGET_HOST-ar" # to create the archive of .o files
+export CC="$TARGET_HOST-gcc"
+export AS="$TARGET_HOST-as"
 
 # filesystem
 export FILE_PREFIX="/usr"
@@ -22,9 +23,7 @@ export BOOT_DIR="/boot"
 export SYSROOT="$(pwd)/sysroot"
 export CC="$CC --sysroot=$SYSROOT"
 
-if echo $HOST | grep -Eq -- '-elf$'
+if echo $TARGET_HOST | grep -Eq -- '-elf$'
 then
     CC="$CC -isystem=$INCLUDE_DIR"
 fi
-
-# TODO: Deal with the i686 and i386 thing
