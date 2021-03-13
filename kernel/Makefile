@@ -18,6 +18,7 @@ kernel/kernel.o	\
 
 CFLAGS=-O2 -g -ffreestanding -Wall -Wextra
 LIBK_CFLAGS=-D__is_libk -Iinclude
+KERNEL_CFLAGS=-D__is_kernel -Iinclude
 LINK_FLAGS= -nostdlib -lk -lgcc
 
 OBJS_PRIM=\
@@ -41,10 +42,10 @@ theOS.kernel: $(OBJS) $(ARCH_DIR)/linker.ld
 	$(CC) -T $(ARCH_DIR)/linker.ld -o $@ $(CFLAGS) $(OBJS) $(LINK_FLAGS)
 
 %.o: %.c
-	$(CC) -c $< -o $@ $(CFLAGS) $(LIBK_CFLAGS)
+	$(CC) -c $< -o $@ $(CFLAGS) $(KERNEL_CFLAGS) 
 
 %.o: %.S 
-	$(CC) -c $< -o $@ $(CFLAGS) $(LIBK_CFLAGS)
+	$(CC) -c $< -o $@ $(CFLAGS) $(KERNEL_CFLAGS)
 
 $(ARCH_DIR)/crtbegin.o $(ARCH_DIR)/crtend.o:
 	OBJ=`$(CC) $(CFLAGS) $(LIBK_CFLAGS) -print-file-name=$(@F)` && cp "$$OBJ" $@

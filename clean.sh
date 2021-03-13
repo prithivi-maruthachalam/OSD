@@ -1,5 +1,6 @@
 #!/bin/sh
 
+# set -e
 . ./config.sh
 
 for FOLDER in $MAJOR_FOLDERS

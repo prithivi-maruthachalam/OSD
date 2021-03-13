@@ -1,3 +1,4 @@
+#!/bin/bash
 # Defines the various environment variables we need for compiling
 
 # list of major project directories
@@ -25,3 +26,5 @@ if echo $HOST | grep -Eq -- '-elf$'
 then
     CC="$CC -isystem=$INCLUDE_DIR"
 fi
+
+# TODO: Deal with the i686 and i386 thing
