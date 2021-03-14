@@ -7,7 +7,7 @@ Functions to initialize and print to it
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
-
+#include <stdlib.h>
 #include <kernel/tty.h> // Will be needed at other parts of the system
 #include "vga.h"        // Only used inside this object file
 
@@ -15,8 +15,8 @@ Functions to initialize and print to it
 path because we're doing this with sysroot. So the library will be linked from our OS's includes
 folder */
 
-#define VGA_HEIGHT 80
-#define VGA_WIDTH 25
+#define VGA_HEIGHT 25
+#define VGA_WIDTH 80
 static uint16_t *const VGA_MEMORY = (uint16_t *)0xB8000;
 
 static size_t tty_row;
@@ -49,6 +49,14 @@ and column as required, resetting them to 0 when there's an overflow */
 // TODO: Handle newline
 void terminal_putchar(char c)
 {
+    if (c == '\n')
+    {
+        char buf[5];
+        tty_column = 0;
+        tty_row++;
+        return;
+    }
+
     const size_t index = tty_row * VGA_WIDTH + tty_column;
     tty_buffer[index] = vga_entry((unsigned char)c, tty_color);
 

@@ -5,6 +5,5 @@
 void kernel_main()
 {
     terminal_init();
-    printf("[KERNEL_MAIN] :hi    ");
-    printf("int: %d  |  oct: %o  |  hex: %x  ", 278, 278, 278);
+    printf("[KERNEL_MAIN] : hi");
 }
