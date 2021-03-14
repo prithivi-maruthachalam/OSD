@@ -10,4 +10,6 @@ void kernel_main()
     printf(itoa(19345, temp_buf, 10));
     printf("    ");
     printf(itoa(-193, temp_buf, 10));
+    printf("    ");
+    printf(itoa(0, temp_buf, 10));
 }

@@ -4,6 +4,14 @@ char *itoa(int num, char *buf, unsigned int radix)
 {
     int i = 0;
     int j = 0;
+
+    if (num == 0)
+    {
+        buf[i++] = '0';
+        buf[i] = '\0';
+        return buf;
+    }
+
     if (num < 0)
     {
         num = 0 - num;
