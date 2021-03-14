@@ -43,15 +43,40 @@ void terminal_init()
     }
 }
 
+void terminal_scroll()
+{
+    for (size_t y = 1; y < VGA_HEIGHT; y++)
+    {
+        for (size_t x = 0; x < VGA_WIDTH; x++)
+        {
+            const size_t indexFrom = (y * VGA_WIDTH) + x;
+            const size_t indexTo = ((y - 1) * VGA_WIDTH) + x;
+
+            tty_buffer[indexTo] = tty_buffer[indexFrom];
+        }
+    }
+
+    tty_row--;
+    for (size_t x = 0; x < VGA_WIDTH; x++)
+    {
+        const size_t lastIndex = (tty_row * VGA_WIDTH) + x;
+        tty_buffer[lastIndex] = vga_entry(' ', tty_color);
+    }
+}
+
 /* Puts a char in the buffer at the current (row, col) and current color. It also increments current row
 and column as required, resetting them to 0 when there's an overflow */
-// TODO: Add scrolling
-// TODO: Handle newline
+// TODO: Make scrolling better
+// TODO: Handle width overflow cases
 void terminal_putchar(char c)
 {
+    if (tty_row == VGA_HEIGHT)
+    {
+        terminal_scroll();
+    }
+
     if (c == '\n')
     {
-        char buf[5];
         tty_column = 0;
         tty_row++;
         return;
@@ -63,8 +88,6 @@ void terminal_putchar(char c)
     if (++tty_column == VGA_WIDTH)
     {
         tty_column = 0;
-        if (++tty_row == VGA_HEIGHT)
-            tty_row = 0;
     }
 }
 
@@ -74,7 +97,6 @@ void terminal_write(const char *str, size_t size)
         terminal_putchar(str[i]);
 }
 
-// TODO: strlen in libc
 void terminal_writestring(const char *str)
 {
     terminal_write(str, strlen(str));

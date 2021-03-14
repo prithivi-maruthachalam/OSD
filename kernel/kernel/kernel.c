@@ -5,5 +5,8 @@
 void kernel_main()
 {
     terminal_init();
-    printf("[KERNEL_MAIN] : hi");
+    for (int i = 0; i < 25; i++)
+        printf("%d - [KERNEL_MAIN] : hi\n", i);
+    printf("l1 -   sd f dfgh  \n");
+    printf("l2 -   gd  dsfdfgh  \n dsjhfg ");
 }
