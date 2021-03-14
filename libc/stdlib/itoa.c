@@ -12,16 +12,21 @@ char *itoa(int num, char *buf, unsigned int radix)
         return buf;
     }
 
+    // Don't really need signed support for other radices
     if (num < 0)
     {
         num = 0 - num;
-        buf[i++] = '-';
-        j++;
+        if (radix == 10)
+        {
+            buf[i++] = '-';
+            j++;
+        }
     }
 
     while (num > 0)
     {
-        buf[i] = (char)((num % radix) + '0');
+        int digit = num % radix;
+        buf[i] = (digit > 9) ? 'A' + (digit - 10) : (digit) + '0';
         num = num / radix;
         i++;
     }
