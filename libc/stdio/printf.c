@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <limits.h>
+#include <stdlib.h>
 
 // Internal function to actually put the string to stdout through putchar
 static bool print(const char *data, size_t length)
