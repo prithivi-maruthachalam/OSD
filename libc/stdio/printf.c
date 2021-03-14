@@ -109,6 +109,69 @@ int printf(const char *restrict format_str, ...)
             bytes_written += len;
             format_str++;
         }
+        else if (*format_str == 'd')
+        {
+            // integers
+            const int num = va_arg(params, int);
+            char str[12];
+            itoa(num, str, 10);
+            size_t len = strlen(str);
+            if (max_remaining < len)
+            {
+                // set errno
+                // OVERFLOW
+                return -1;
+            }
+
+            if (print(str, len) == false)
+            {
+                return -1;
+            }
+            bytes_written += len;
+            format_str++;
+        }
+        else if (*format_str == 'x')
+        {
+            // integers
+            const int num = va_arg(params, int);
+            char str[12];
+            itoa(num, str, 16);
+            size_t len = strlen(str);
+            if (max_remaining < len)
+            {
+                // set errno
+                // OVERFLOW
+                return -1;
+            }
+
+            if (print(str, len) == false)
+            {
+                return -1;
+            }
+            bytes_written += len;
+            format_str++;
+        }
+        else if (*format_str == 'o')
+        {
+            // integers
+            const int num = va_arg(params, int);
+            char str[12];
+            itoa(num, str, 8);
+            size_t len = strlen(str);
+            if (max_remaining < len)
+            {
+                // set errno
+                // OVERFLOW
+                return -1;
+            }
+
+            if (print(str, len) == false)
+            {
+                return -1;
+            }
+            bytes_written += len;
+            format_str++;
+        }
         else
         {
             // Print until the end of the format string
