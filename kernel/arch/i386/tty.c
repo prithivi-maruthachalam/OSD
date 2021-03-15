@@ -67,7 +67,6 @@ void terminal_scroll()
 /* Puts a char in the buffer at the current (row, col) and current color. It also increments current row
 and column as required, resetting them to 0 when there's an overflow */
 // TODO: Make scrolling better
-// TODO: Handle width overflow cases
 void terminal_putchar(char c)
 {
     if (tty_row == VGA_HEIGHT)
@@ -88,6 +87,10 @@ void terminal_putchar(char c)
     if (++tty_column == VGA_WIDTH)
     {
         tty_column = 0;
+        if (++tty_row == VGA_HEIGHT)
+        {
+            terminal_scroll();
+        }
     }
 }
 
