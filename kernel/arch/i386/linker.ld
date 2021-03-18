@@ -8,7 +8,7 @@ SECTIONS
     .text BLOCK(4K) : ALIGN(4K) /* BLOCK and ALIGN are equivalent : backword compatibility : advantage ALIGN */
     {
         /* We put the mutiboot header first */
-        *(.multiboot) /* Don't really need the *; multiboot isn't going to be declared across multiple files */
+        *(.multiboot) 
         *(.text)
     }
 
