@@ -3,13 +3,18 @@ ENTRY(_start)
 SECTIONS
 {
     . = 1M; /* Convention - to be used by BIOS and other stuff? */
-  
+    _kernel_start = .;
+
     /* 4K for each section - ring a bell? - page sizes */
-    .text BLOCK(4K) : ALIGN(4K) /* BLOCK and ALIGN are equivalent : backword compatibility : advantage ALIGN */
+    .multiboot ALIGN(4K) : AT(1M)/* BLOCK and ALIGN are equivalent : backword compatibility : advantage ALIGN */
     {
         /* We put the mutiboot header first */
-        *(.multiboot) 
-        *(.text)
+        *(.multiboot)
+    }
+
+    .text BLOCK(4K) : ALIGN(4K) /* BLOCK and ALIGN are equivalent : backword compatibility : advantage ALIGN */
+    {
+        *(.text) 
     }
 
     /* For read-only data */
@@ -32,4 +37,6 @@ SECTIONS
         appropriate section (.bss or .data) */
         *(.bss) /* We set up the stack as unitialized Read-Write data */
     }
+
+    _kernel_end = .;
 }

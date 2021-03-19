@@ -13,13 +13,13 @@ Calls the kernel main
 .set CHECKSUM, -(MAGIC + FLAGS)
 
 # the actual multiboot header
-.section .multiboot # we'll tell the linker where to put this
+# aw and progbits are required to put it above the text section in the elf
+# progbits inform that this is a section that contains initialised data and instructions
+.section .multiboot, "ad", @progbits # we'll tell the linker where to put this
 .align 4 # 4 byte aligned for 32-bit arch
 .long MAGIC
 .long FLAGS
 .long CHECKSUM
-
-
 
 # C needs a stack
 .section .bss # section for unitialized data
@@ -28,16 +28,63 @@ stack_bottom: # label for stack bottom
 .skip 16384 # 16KB for the stack
 stack_top: # guess, stupid
 
+
+# allocate space for paging structure
+.section .bss, "aw", @nobits
+    .align 4096
+boot_page_directory:
+    .skip 4096
+boot_page_table1:
+    .skip 4096
+
 # The actual kernel entry
 .section .text
 .global _start # needs to be gloabal so that the linker can find it
 .type _start, @function # tells the assembler that _start is a function
 _start: 
-    /*
-        NOTE: We don't need to keep track of the stack base(%ebp)
-        It's only a needed in functions called from here, cause things can get lost when there are
-        lot of thing to be stored(local variables and so on)
-    */
+    movl $boot_page_table1, %edi    # page table entry address
+    movl $0, %esi   # physical memeory
+    movl $1023, %ecx # loop instruction handeles this by itself
+    
+1:
+    cmpl $_kernel_start, %esi
+    jl 2f
+    cmpl $_kernel_end, %esi 
+    jge 3f  # finished allocating bytes for kernel, let's leave
+
+    # esi is greater than or equal to kernel start
+    # allocate pages
+    movl %esi, %edx
+    orl $0x003, %edx
+    movl %edx, (%edi) 
+
+2:
+    addl $4096, %esi    # each page is 4KB
+    addl $4, %edi         # each entry is 4 bytes
+    loop 1b    # this also decerments ecx
+
+3: # map video memory
+    movl $(0x000B8000 | 0x003), boot_page_table1 + (1023 * 4)
+
+    movl $(boot_page_table1 + 0x003), boot_page_directory
+    movl $(boot_page_table1 + 0x003), boot_page_directory + (768 * 4)
+
+    # set the control registers
+    # set cr3 to address of boot_page_directory
+    
+    movl $(boot_page_directory + 0x003), %ecx
+    movl %ecx, %cr3
+
+    # enable paging in cr0
+    movl %cr0, %ecx
+    orl $0x80000001, %ecx
+    movl %ecx, %cr0 
+    
+
+    lea 4f, %ecx
+    jmp *%ecx;
+
+4:
     movl $stack_top, %esp # move the address of stack top into the stack pointer | stack grows downward so forget about stack_bottom
     call _init # init comes first in order to set up crtbegin.o - perform initialisations for C libraries
     # NOTE: call pushes the return address to the stack. Don't worry about that
