@@ -38,7 +38,7 @@ boot_page_table1:
     .skip 4096
 
 # The actual kernel entry
-.section .text
+.section .text.initBoot
 .global _start # needs to be gloabal so that the linker can find it
 .type _start, @function # tells the assembler that _start is a function
 _start: 
@@ -84,7 +84,12 @@ _start:
     lea 4f, %ecx
     jmp *%ecx;
 
+
+.section .text
 4:
+    movl %cr3, %ecx
+    movl %ecx, %cr3
+
     movl $stack_top, %esp # move the address of stack top into the stack pointer | stack grows downward so forget about stack_bottom
     call _init # init comes first in order to set up crtbegin.o - perform initialisations for C libraries
     # NOTE: call pushes the return address to the stack. Don't worry about that

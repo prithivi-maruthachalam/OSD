@@ -6,31 +6,32 @@ SECTIONS
     _kernel_start = .;
 
     /* 4K for each section - ring a bell? - page sizes */
-    .multiboot ALIGN(4K) : AT(1M)/* BLOCK and ALIGN are equivalent : backword compatibility : advantage ALIGN */
+    .multiboot ALIGN(4K) : AT(1M)
     {
         /* We put the mutiboot header first */
         *(.multiboot)
     }
+    .text.initBoot ALIGN(4K) :
+    {
+        *(.text.initBoot) 
+    }
 
-    .text BLOCK(4K) : ALIGN(4K) /* BLOCK and ALIGN are equivalent : backword compatibility : advantage ALIGN */
+    .text ALIGN(4K) : 
     {
         *(.text) 
     }
 
-    /* For read-only data */
-    .rodata BLOCK(4K) : ALIGN(4K)
+    .rodata ALIGN(4K) : 
     {   
         *(.rodata)
     }
 
-    /* Initialised Read-Write data */
-    .data BLOCK(4K) : ALIGN(4K)
+    .data ALIGN(4K) :
     {
         *(.data)
     }
 
-    /* For unitialized Read-Write data */
-    .bss BLOCK(4K) : ALIGN(4K)
+    .bss ALIGN(4K) : 
     {
         *(.COMMON) /* Basically unitialized GLOBAL variables. They only exist during the
         linking stage. Ultimately, they get initialised to 0. The linker then decides to move these to an 
