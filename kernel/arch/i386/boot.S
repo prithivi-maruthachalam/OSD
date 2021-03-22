@@ -12,6 +12,7 @@ Calls the kernel main
 .set FLAGS, ALIGN | MEMINFO
 .set CHECKSUM, -(MAGIC + FLAGS)
 
+.set VIRTUAL_KERNEL_OFFSET, 0xC0000000;
 # the actual multiboot header
 # aw and progbits are required to put it above the text section in the elf
 # progbits inform that this is a section that contains initialised data and instructions
@@ -42,14 +43,14 @@ boot_page_table1:
 .global _start # needs to be gloabal so that the linker can find it
 .type _start, @function # tells the assembler that _start is a function
 _start: 
-    movl $boot_page_table1, %edi    # page table entry address
+    movl $(boot_page_table1 - VIRTUAL_KERNEL_OFFSET), %edi    # page table entry address
     movl $0, %esi   # physical memeory
     movl $1023, %ecx # loop instruction handeles this by itself
     
 1:
     cmpl $_kernel_start, %esi
     jl 2f
-    cmpl $_kernel_end, %esi 
+    cmpl $(_kernel_end - VIRTUAL_KERNEL_OFFSET), %esi 
     jge 3f  # finished allocating bytes for kernel, let's leave
 
     # esi is greater than or equal to kernel start
@@ -64,15 +65,15 @@ _start:
     loop 1b    # this also decerments ecx
 
 3: # map video memory
-    movl $(0x000B8000 | 0x003), boot_page_table1 + (1023 * 4)
+    movl $(0x000B8000 | 0x003), boot_page_table1 - VIRTUAL_KERNEL_OFFSET + (1023 * 4)
 
-    movl $(boot_page_table1 + 0x003), boot_page_directory
-    movl $(boot_page_table1 + 0x003), boot_page_directory + (768 * 4)
+    movl $(boot_page_table1 + 0x003 - VIRTUAL_KERNEL_OFFSET), boot_page_directory - VIRTUAL_KERNEL_OFFSET
+    movl $(boot_page_table1 + 0x003 - VIRTUAL_KERNEL_OFFSET), boot_page_directory - VIRTUAL_KERNEL_OFFSET + (768 * 4)
 
     # set the control registers
     # set cr3 to address of boot_page_directory
     
-    movl $(boot_page_directory), %ecx
+    movl $(boot_page_directory - VIRTUAL_KERNEL_OFFSET), %ecx
     movl %ecx, %cr3
 
     # enable paging in cr0

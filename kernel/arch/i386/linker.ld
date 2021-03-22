@@ -1,6 +1,7 @@
 ENTRY(_start)
 
 VIRTUAL_KERNEL_OFFSET = 0xC0000000;
+VIRTUAL_KERNEL_POSITION = 0xC0100000;
 
 SECTIONS
 {
@@ -18,24 +19,24 @@ SECTIONS
         *(.text.initBoot) 
     }
 
+    . += VIRTUAL_KERNEL_OFFSET;
 
-
-    .text ALIGN(4K) : AT(ADDR(.text)) 
+    .text ALIGN(4K) : AT(ADDR(.text) - VIRTUAL_KERNEL_OFFSET) 
     {
         *(.text) 
     }
 
-    .rodata ALIGN(4K) : AT(ADDR(.rodata))
+    .rodata ALIGN(4K) : AT(ADDR(.rodata)  - VIRTUAL_KERNEL_OFFSET)
     {   
         *(.rodata)
     }
 
-    .data ALIGN(4K) : AT(ADDR(.data))
+    .data ALIGN(4K) : AT(ADDR(.data)  - VIRTUAL_KERNEL_OFFSET)
     {
         *(.data)
     }
 
-    .bss ALIGN(4K) : AT(ADDR(.bss))
+    .bss ALIGN(4K) : AT(ADDR(.bss)  - VIRTUAL_KERNEL_OFFSET)
     {
         *(.COMMON) /* Basically unitialized GLOBAL variables. They only exist during the
         linking stage. Ultimately, they get initialised to 0. The linker then decides to move these to an 
