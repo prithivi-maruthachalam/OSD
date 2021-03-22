@@ -4,4 +4,4 @@
 file=$1
 
 . ./build.sh
-objdump -l -d -f -h sysroot/boot/theOS.kernel > ${file:='t_disAsm.txt'}
+mkdir -p dumpDir/ && objdump -l -D -f -h sysroot/boot/theOS.kernel > dumpDir/${file:='t_disAsm.txt'}

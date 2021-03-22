@@ -72,7 +72,7 @@ _start:
     # set the control registers
     # set cr3 to address of boot_page_directory
     
-    movl $(boot_page_directory + 0x003), %ecx
+    movl $(boot_page_directory), %ecx
     movl %ecx, %cr3
 
     # enable paging in cr0
@@ -87,9 +87,6 @@ _start:
 
 .section .text
 4:
-    movl %cr3, %ecx
-    movl %ecx, %cr3
-
     movl $stack_top, %esp # move the address of stack top into the stack pointer | stack grows downward so forget about stack_bottom
     call _init # init comes first in order to set up crtbegin.o - perform initialisations for C libraries
     # NOTE: call pushes the return address to the stack. Don't worry about that
