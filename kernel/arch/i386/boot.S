@@ -90,6 +90,7 @@ _start:
 4:
     movl $0, boot_page_directory + 0
     
+    # TODO: invlpg isn't supported by i386. Write a kernel routine
     movl %cr3, %eax
     movl %eax, %cr3
 

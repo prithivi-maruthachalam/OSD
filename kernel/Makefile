@@ -39,7 +39,7 @@ $(ARCH_DIR)/crtn.o	\
 
 #generate the .kernel(bin) and place it in the boot directory
 theOS.kernel: $(OBJS) $(ARCH_DIR)/linker.ld
-	$(CC) -T $(ARCH_DIR)/linker.ld -o $@ $(CFLAGS) $(OBJS) $(LINK_FLAGS)
+	$(CC) -T $(ARCH_DIR)/linker.ld -o $@ $(CFLAGS) $(OBJS) $(LINK_FLAGS) 
 
 %.o: %.c
 	$(CC) -c $< -o $@ $(CFLAGS) $(KERNEL_CFLAGS) 
