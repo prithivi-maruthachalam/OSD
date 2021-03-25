@@ -9,6 +9,7 @@ KERNEL_LIBS=\
 KERNEL_ARCH_OBJS=\
 $(ARCH_DIR)/boot.o	\
 $(ARCH_DIR)/tty.o	\
+$(ARCH_DIR)/gdt.o	\
 
 KERNEL_OBJS=\
 $(KERNEL_ARCH_OBJS)	\
@@ -20,13 +21,6 @@ CFLAGS=-O2 -g -ffreestanding -Wall -Wextra
 LIBK_CFLAGS=-D__is_libk -Iinclude
 KERNEL_CFLAGS=-D__is_kernel -Iinclude
 LINK_FLAGS= -nostdlib -lk -lgcc
-
-OBJS_PRIM=\
-$(ARCH_DIR)/crti.o	\
-$(ARCH_DIR)/crtbegin.o	\
-$(KERNEL_OBJS)	\
-$(ARCH_DIR)/crtend.o	\
-$(ARCH_DIR)/crtn.o	\
 
 OBJS=\
 $(ARCH_DIR)/crti.o	\
@@ -60,7 +54,7 @@ install-headers:
 
 clean:
 	rm -f theOS.kernel
-	rm -f $(OBJS_PRIM) *.o
-	rm -f $(OBJS_PRIM:.o=.d) $(LIBK_OBJS:.o=.d) *.d
+	rm -f $(OBJS) *.o
+	rm -f $(OBJS:.o=.d) $(LIBK_OBJS:.o=.d) *.d
 
 object-install: install-kernel

@@ -103,3 +103,25 @@ _start:
     cli # certain interrupts will start it up again, so we'll disable those
 1:  hlt
     jmp 1b # loop back
+
+
+# function to load GDT created in C
+.section .text
+.global load_gdt
+.type load_gdt, @function
+load_gdt:
+    movl 4(%esp), %eax
+    lgdt (%eax)
+
+    movw $0x10, %ax
+    movw %ax, %es
+    movw %ax, %ds
+	movw %ax, %fs
+	movw %ax, %gs
+	movw %ax, %ss 
+
+    # this sets the CS register to the kernel code descriptor in GDT
+    jmp $0x08,$flush
+
+flush:
+    ret
