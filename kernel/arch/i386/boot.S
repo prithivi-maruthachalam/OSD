@@ -120,6 +120,9 @@ load_gdt:
 	movw %ax, %gs
 	movw %ax, %ss 
 
+    mov $0x28, %eax
+    ltr %ax
+
     # this sets the CS register to the kernel code descriptor in GDT
     jmp $0x08,$flush
 
