@@ -5,9 +5,7 @@
 
 struct registers_state
 {
-    uint32_t EAX, ECX, EDX, RBX;
-    uint32_t originalESP;
-    uint32_t EBP, ESI, EDI;
+    uint32_t edi, esi, ebp, esp, ebx, edx, ecx, eax;
 } __attribute__((packed));
 
 #endif

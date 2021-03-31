@@ -1,9 +1,9 @@
 #include <kernel/isr.h>
 #include <stdio.h>
 
-void isr_handler()
+void isr_handler(struct registers_state regs, uint32_t ISR_num, uint32_t errorCode)
 {
-    printf("ISR called\n");
+    printf("ISR called - %d\n", ISR_num);
 }
 
 void irq_handler()
