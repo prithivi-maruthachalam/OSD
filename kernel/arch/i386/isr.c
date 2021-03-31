@@ -1,9 +1,12 @@
 #include <kernel/isr.h>
+#include <stdio.h>
 
-void isr_handler(struct registers_state regState, uint32_t interruptNum)
+void isr_handler()
 {
+    printf("ISR called\n");
 }
 
-void irq_handler(struct registers_state regState, uint32_t interruptNum)
+void irq_handler()
 {
+    printf("IRQ called\n");
 }
