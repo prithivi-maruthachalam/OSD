@@ -2,8 +2,10 @@
 .macro ISR_NOERRCODE num
     .global isr\num
     isr\num :
-        // push $0x43
+        push $0
+        push $0x43
         movl $0x43, 0xC03FF000
+        add $8, %esp
         iret
 .endm
 
