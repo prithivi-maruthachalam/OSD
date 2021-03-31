@@ -36,6 +36,7 @@ void gdt_init()
     gdt_create_entry(&GDT_entries[4], 0, 0xFFFFFFFF, 0xF2, 0xC0); // user data
     gdt_create_entry(&GDT_entries[5], (uint32_t)&TSS, (sizeof(TSS) - 1), 0x89, 0x10);
     TSS.SS0 = 0x10; // kernel data
+    // todo: set ESP0
 
     GDTR.limit = sizeof(GDT_entries) - 1;
     GDTR.baseAddress = (uint32_t)&GDT_entries;

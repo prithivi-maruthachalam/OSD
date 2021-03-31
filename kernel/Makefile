@@ -10,10 +10,13 @@ KERNEL_ARCH_OBJS=\
 $(ARCH_DIR)/boot.o	\
 $(ARCH_DIR)/tty.o	\
 $(ARCH_DIR)/gdt.o	\
+$(ARCH_DIR)/isr.o	\
 
 KERNEL_OBJS=\
 $(KERNEL_ARCH_OBJS)	\
 kernel/kernel.o	\
+$(ARCH_DIR)/idt.o	\
+$(ARCH_DIR)/interrupts.o	\
 
 
 

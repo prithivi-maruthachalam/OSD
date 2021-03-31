@@ -128,3 +128,4 @@ load_gdt:
 
 flush:
     ret
+

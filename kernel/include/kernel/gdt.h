@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 
-// constants
+// Functions
 void gdt_init();
 
 // structure for gdt entry
@@ -17,7 +17,7 @@ struct gdtEntry
     uint8_t baseHigh;
 } __attribute__((packed));
 
-// structure for gdt_ptr
+// structure for gdtr
 struct gdtDescriptor
 {
     uint16_t limit;
@@ -51,7 +51,7 @@ struct TSS_segment
     uint32_t EBX;
     uint32_t ESP;
     uint32_t EBP;
-    uint16_t ESI;
+    uint32_t ESI;
     uint32_t EDI;
 
     // segment selector registers
@@ -78,7 +78,7 @@ struct TSS_segment
     uint16_t LDT_high_reserved;
 
     // IO map
-    uint16_t IOMap_low_reserved;
+    uint16_t IOMap_low_reserved_T;
     uint16_t IO_Map;
 } __attribute__((packed));
 
