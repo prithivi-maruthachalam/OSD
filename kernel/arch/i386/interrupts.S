@@ -1,3 +1,19 @@
+# Macros for handler stub creation
+.macro ISR_NOERRCODE num
+    .global isr\num
+    isr\num :
+        // push $0x43
+        movl $0x43, 0xC03FF000
+        iret
+.endm
+
+// .macro ISR_ERRCODE num
+//     .global isr\num
+//     isr\num :
+//         push \num
+//         jmp isr_stub
+// .endm
+
 .section .text
 .global load_idt
 .type load_idt, @function
@@ -9,29 +25,20 @@ load_idt:
     ret
 
 
+ISR_NOERRCODE 49
+
 // # for ISRs
 // .extern isr_handler
 
-.global isr49
-isr49:
+.type isr_stub, @function
+isr_stub:
+    # stack EFLAGS -> CS -> EIP -> ERR CODE / 0 -> INT NUM
     movl $0x43, 0xC03FF000
-    hlt
     iret
 
-// .macro ISR_NOERRCODE num
-//     .global isr\num
-//     isr\num :
-//         push 0
-//         push \num
-//         jmp isr_stub
-// .endm
 
-// .macro ISR_ERRCODE num
-//     .global isr\num
-//     isr\num :
-//         push \num
-//         jmp isr_stub
-// .endm
+
+
 
 // ISR_NOERRCODE 0
 // ISR_NOERRCODE 1
@@ -66,14 +73,7 @@ isr49:
 // ISR_NOERRCODE 30
 // ISR_NOERRCODE 31
 
-// .type isr_stub, @function
-// isr_stub:
-//     # stack EFLAGS -> CS -> EIP -> ERR CODE / 0 -> INT NUM
-//     pushal
-//     call isr_handler
-//     popal
-//     add %esp, 8 # for the 2 value that we pushed
-//     iret
+
 
 
 

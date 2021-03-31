@@ -6,22 +6,6 @@ struct idtDescriptor IDTR;
 struct idtEntry IDT[IDT_SIZE];
 extern void load_idt(struct idtDescriptor *IDTR);
 
-void idt_init()
-{
-    extern void isr49();
-    idt_create_entry(&IDT[49], isr49, 0x08, 0x8E);
-    IDTR.limit = (uint16_t)(IDT_SIZE * 8) - 1;
-    IDTR.base = (uint32_t)&IDT;
-    printf("IDT_limit: %d\n", IDTR.limit);
-    printf("IDT_base: %x\n", IDTR.base);
-    load_idt(&IDTR);
-}
-
-// #include <kernel/idt.h>
-// #include <kernel/ports.h>
-
-// // make an IDTR
-
 void idt_create_entry(struct idtEntry *entry, uint32_t base, uint16_t segmentSelector, uint16_t type)
 {
     entry->baseLow = base & 0x0000FFFF;
@@ -29,6 +13,20 @@ void idt_create_entry(struct idtEntry *entry, uint32_t base, uint16_t segmentSel
     entry->segmentSelector = segmentSelector;
     entry->type = type;
     entry->reserved = 0;
+}
+
+void idt_init()
+{
+    extern void isr49();
+
+    idt_create_entry(&IDT[49], (uint32_t)isr49, 0x08, 0x8E);
+
+
+    IDTR.limit = (uint16_t)sizeof(IDT) - 1;
+    IDTR.base = (uint32_t)&IDT;
+    printf("IDT_limit: %d\n", IDTR.limit);
+    printf("IDT_base: %x\n", IDTR.base);
+    load_idt(&IDTR);
 }
 
 // void idt_init()
