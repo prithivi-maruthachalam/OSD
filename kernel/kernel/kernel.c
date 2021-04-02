@@ -11,6 +11,7 @@ void kernel_main()
     printf("[kernel_main]: GDT initialized\n");
     idt_init();
     printf("[kernel_main]: IDT initialized\n");
+    asm volatile("int $1");
 
     for (;;)
         ;
