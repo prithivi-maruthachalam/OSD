@@ -1,6 +1,7 @@
 #ifndef ISR_H
 #define ISR_H
 
+#define UNUSED(x) (void)(x)
 #include <stdint.h>
 
 struct registers_state

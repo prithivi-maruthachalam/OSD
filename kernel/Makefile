@@ -10,6 +10,7 @@ KERNEL_ARCH_OBJS=\
 $(ARCH_DIR)/boot.o	\
 $(ARCH_DIR)/tty.o	\
 $(ARCH_DIR)/loadGDT.o	\
+$(ARCH_DIR)/loadIDT.o	\
 $(ARCH_DIR)/gdt.o	\
 $(ARCH_DIR)/isr.o	\
 

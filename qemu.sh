@@ -3,4 +3,4 @@
 
 . ./iso.sh
 
-qemu-system-i386 -d cpu_reset -cdrom theOS.iso
+qemu-system-i386 -d int -cdrom theOS.iso

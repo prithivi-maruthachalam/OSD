@@ -16,32 +16,19 @@
 .endm
 
 
-.macro IRQ_NOERRCODE num,i_num
+.macro IRQ_NOERRCODE num, abs
     .global irq\num
     irq\num :
-        push $0
-        push $\i_num
+        push $\abs
+        push $\num
         jmp irq_stub 
 .endm
-
-
-.section .text
-.global load_idt
-.type load_idt, @function
-load_idt:
-    movl 4(%esp), %eax
-    lidt (%eax)
-    sti
-    int $50
-    ret
-
 
 
 // for ISRs
 .extern isr_handler
 
 isr_stub_noErrCode:
-    # stack EFLAGS -> CS -> EIP -> ERR CODE / 0 -> INT NUM
     pushal
     call isr_handler
     popal
@@ -49,7 +36,6 @@ isr_stub_noErrCode:
     iret
 
 isr_stub_errCode:
-    # stack EFLAGS -> CS -> EIP -> ERR CODE / 0 -> INT NUM
     pushal
     call isr_handler
     popal
@@ -60,7 +46,7 @@ isr_stub_errCode:
 ISR_NOERRCODE 0
 ISR_NOERRCODE 1
 ISR_NOERRCODE 2
-ISR_NOERRCODE 3
+ISR_NOERRCODE 3 
 ISR_NOERRCODE 4
 ISR_NOERRCODE 5
 ISR_NOERRCODE 6
@@ -98,31 +84,25 @@ ISR_ERRCODE 50
 .extern irq_handler
 
 irq_stub:
-    # stack EFLAGS -> CS -> EIP -> ERR CODE / 0 -> INT NUM
     pushal
     call irq_handler
     popal
-    add $8, %esp # for the 2 value that we pushed
+    add $8, %esp 
     iret
 
-IRQ_NOERRCODE 0, 32
-IRQ_NOERRCODE 1, 33
-IRQ_NOERRCODE 2, 34
-IRQ_NOERRCODE 3,35
-IRQ_NOERRCODE 4,36
-IRQ_NOERRCODE 5,37
-IRQ_NOERRCODE 6,38
-IRQ_NOERRCODE 7,39
-IRQ_NOERRCODE 8,40
-IRQ_NOERRCODE 9,41
-IRQ_NOERRCODE 10,42
-IRQ_NOERRCODE 11,43
-IRQ_NOERRCODE 12,44
-IRQ_NOERRCODE 13,45
-IRQ_NOERRCODE 14,46
-IRQ_NOERRCODE 15,47
-
-
-
-
-
+IRQ_NOERRCODE 0 32
+IRQ_NOERRCODE 1 33
+IRQ_NOERRCODE 2 34
+IRQ_NOERRCODE 3 35
+IRQ_NOERRCODE 4 36
+IRQ_NOERRCODE 5 37
+IRQ_NOERRCODE 6 38
+IRQ_NOERRCODE 7 39
+IRQ_NOERRCODE 8 40
+IRQ_NOERRCODE 9 41
+IRQ_NOERRCODE 10 42
+IRQ_NOERRCODE 11 43
+IRQ_NOERRCODE 12 44
+IRQ_NOERRCODE 13 45
+IRQ_NOERRCODE 14 46
+IRQ_NOERRCODE 15 47
