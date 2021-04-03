@@ -2,7 +2,7 @@
 # Defines the various environment variables we need for compiling
 
 # list of major project directories
-MAJOR_FOLDERS="libc kernel"
+MAJOR_FOLDERS="libc lumos"
 
 # for the host prefix
 export TARGET_HOST="i686-elf"

@@ -1,6 +1,6 @@
-#include <kernel/isr.h>
-#include <kernel/idt.h>
-#include <kernel/ports.h>
+#include <lumos/isr.h>
+#include <lumos/idt.h>
+#include <lumos/ports.h>
 #include <stdio.h>
 
 static inline void sendEOI(uint32_t IRQnum)

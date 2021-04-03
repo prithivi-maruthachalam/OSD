@@ -1,4 +1,4 @@
-#include <kernel/gdt.h>
+#include <lumos/gdt.h>
 
 struct gdtDescriptor GDTR;
 struct gdtEntry GDT_entries[6];

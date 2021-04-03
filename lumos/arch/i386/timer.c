@@ -1,6 +1,6 @@
-#include <kernel/timer.h>
-#include <kernel/isr.h>
-#include <kernel/ports.h>
+#include <lumos/timer.h>
+#include <lumos/isr.h>
+#include <lumos/ports.h>
 
 #include <stdio.h>
 
@@ -23,7 +23,6 @@ void init_timer(uint32_t targetFrequency)
     register_interrupt_handler(32, timer_tick);
 
     uint16_t divider = (uint16_t)(1193182 / targetFrequency);
-    printf("%d", divider);
 
     outb(PIT_CHANNEL0_COMMAND, 0x36);
     outb(PIT_CHANNEL0_DATA, (uint8_t)(divider & 0x00FF));

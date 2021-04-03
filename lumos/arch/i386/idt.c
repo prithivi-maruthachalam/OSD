@@ -1,5 +1,5 @@
-#include <kernel/idt.h>
-#include <kernel/ports.h>
+#include <lumos/idt.h>
+#include <lumos/ports.h>
 #include <stdio.h>
 
 struct idtDescriptor IDTR;

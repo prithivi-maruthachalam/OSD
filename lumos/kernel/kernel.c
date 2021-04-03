@@ -1,11 +1,11 @@
-#include <kernel/tty.h>
-#include <kernel/gdt.h>
-#include <kernel/idt.h>
-#include <kernel/timer.h>
+#include <lumos/tty.h>
+#include <lumos/gdt.h>
+#include <lumos/idt.h>
+#include <lumos/timer.h>
 #include <stdio.h>
 #include <stdlib.h>
 
-#define CLOCKS_PER_SECOND 1000000
+#define CLOCKS_PER_SECOND 50
 
 void kernel_main()
 {

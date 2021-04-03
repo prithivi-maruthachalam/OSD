@@ -8,8 +8,8 @@ Functions to initialize and print to it
 #include <stdint.h>
 #include <string.h>
 #include <stdlib.h>
-#include <kernel/tty.h> // Will be needed at other parts of the system
-#include "vga.h"        // Only used inside this object file
+#include <lumos/tty.h> // Will be needed at other parts of the system
+#include "vga.h"       // Only used inside this object file
 
 /* string.h is actually provided by us. We are able to include it without an explicit
 path because we're doing this with sysroot. So the library will be linked from our OS's includes
