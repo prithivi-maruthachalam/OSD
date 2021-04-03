@@ -8,5 +8,6 @@
 
 void init_timer(uint32_t targetFrequency);
 uint32_t clock();
+void sleep(uint32_t ms);
 
 #endif

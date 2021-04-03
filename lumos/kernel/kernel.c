@@ -5,8 +5,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define CLOCKS_PER_SECOND 50
-
 void kernel_main()
 {
     gdt_init();
@@ -14,7 +12,7 @@ void kernel_main()
     printf("[kernel_main]: GDT initialized\n");
     idt_init();
     printf("[kernel_main]: IDT initialized\n");
-    init_timer(CLOCKS_PER_SECOND);
+    init_timer(50);
 
     for (;;)
         ;
