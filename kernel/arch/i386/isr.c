@@ -10,6 +10,7 @@ static inline void sendEOI(uint32_t IRQnum)
     outb(PIC_MASTER_COMMAND_PORT, PIC_EOI);
 }
 
+void (*handlers[IDT_SIZE])(struct registers_state);
 char *exception_messages[] = {
     "Division by zero",
     "Debug",
@@ -61,14 +62,20 @@ void isr_handler(struct registers_state regs, uint32_t ISR_num, uint32_t errorCo
 
 void irq_handler(struct registers_state regs, uint32_t IRQ_num, uint32_t IDT_num)
 {
-    printf("IRQ called - %d - %d\n", IRQ_num, IDT_num);
-    if (IRQ_num == 1)
+    if (!handlers[IDT_num])
     {
-        printf("Keypress: ");
-        unsigned char scan_code = inb(KEYBOARD_DATA_PORT);
-        printf("%x\n", scan_code);
+        printf("IRQ called - %d - %d\n", IRQ_num, IDT_num);
+    }
+    else
+    {
+        (handlers[IDT_num])(regs);
     }
 
     sendEOI(IRQ_num);
     UNUSED(regs);
+}
+
+void register_interrupt_handler(uint32_t IDT_num, uint32_t handler)
+{
+    handlers[IDT_num] = (void (*)(struct registers_state))handler;
 }

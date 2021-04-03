@@ -78,8 +78,8 @@ void idt_init()
     outb(PIC_SLAVE_DATA_PORT, 0x02);
     outb(PIC_MASTER_DATA_PORT, 0x01);
     outb(PIC_SLAVE_DATA_PORT, 0x01);
-    outb(PIC_MASTER_DATA_PORT, 0xFF);
-    outb(PIC_SLAVE_DATA_PORT, 0xFF);
+    outb(PIC_MASTER_DATA_PORT, 0x00);
+    outb(PIC_SLAVE_DATA_PORT, 0x00);
 
     CREATE_ISR(0);
     CREATE_ISR(1);

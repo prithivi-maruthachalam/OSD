@@ -13,6 +13,7 @@ $(ARCH_DIR)/loadGDT.o	\
 $(ARCH_DIR)/loadIDT.o	\
 $(ARCH_DIR)/gdt.o	\
 $(ARCH_DIR)/isr.o	\
+$(ARCH_DIR)/timer.o	\
 
 KERNEL_OBJS=\
 $(KERNEL_ARCH_OBJS)	\
