@@ -2,6 +2,7 @@
 #include <lumos/gdt.h>
 #include <lumos/idt.h>
 #include <lumos/timer.h>
+#include <lumos/keyboard.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -13,6 +14,8 @@ void kernel_main()
     idt_init();
     printf("[kernel_main]: IDT initialized\n");
     init_timer(50);
+    printf("[kernel_main]: timer initialized\n");
+    init_keyboard();
 
     for (;;)
         ;

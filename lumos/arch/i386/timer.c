@@ -1,5 +1,6 @@
 #include <lumos/timer.h>
 #include <lumos/isr.h>
+#include <lumos/idt.h>
 #include <lumos/ports.h>
 
 #include <stdio.h>
@@ -16,7 +17,6 @@ void timer_tick(struct registers_state regs)
 void sleep(uint32_t ms)
 {
     uint32_t target_ticks = ticks + (ms * CLOCKS_PER_SECOND / 1000);
-    uint32_t t;
     while (ticks <= target_ticks)
     {
         asm volatile("hlt"); // To deal with compiler optimisation
@@ -34,7 +34,7 @@ void init_timer(uint32_t targetFrequency)
     outb(PIC_SLAVE_DATA_PORT, 0x00);
 
     asm volatile("cli");
-    register_interrupt_handler(32, timer_tick);
+    register_interrupt_handler(32, (uint32_t)timer_tick);
 
     CLOCKS_PER_SECOND = targetFrequency;
     uint16_t divider = (uint16_t)(1193182 / targetFrequency);

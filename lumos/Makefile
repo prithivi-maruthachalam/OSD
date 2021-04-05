@@ -14,6 +14,8 @@ $(ARCH_DIR)/loadIDT.o	\
 $(ARCH_DIR)/gdt.o	\
 $(ARCH_DIR)/isr.o	\
 $(ARCH_DIR)/timer.o	\
+$(ARCH_DIR)/keyboard.o	\
+
 
 KERNEL_OBJS=\
 $(KERNEL_ARCH_OBJS)	\

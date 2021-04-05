@@ -5,6 +5,13 @@
 #define IDT_SIZE 256
 #define KERNEL_CODE_SELECTOR 0x08
 
+// PIC ports
+#define PIC_MASTER_COMMAND_PORT 0x20
+#define PIC_MASTER_DATA_PORT (PIC_MASTER_COMMAND_PORT) + 1
+#define PIC_SLAVE_COMMAND_PORT 0xA0
+#define PIC_SLAVE_DATA_PORT (PIC_SLAVE_COMMAND_PORT) + 1
+#define PIC_EOI 0x20
+
 // Functions
 void idt_init();
 

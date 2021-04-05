@@ -17,8 +17,8 @@ void idt_create_entry(struct idtEntry *entry, uint32_t base, uint16_t segmentSel
 
 void idt_init()
 {
-#define CREATE_ISR(ISR_num) idt_create_entry(&IDT[ISR_num], (uint32_t)isr##ISR_num, 0x08, 0x8E)
-#define CREATE_IRQ(IRQ_num, IDT_num) idt_create_entry(&IDT[IDT_num], (uint32_t)irq##IRQ_num, 0x08, 0x8E)
+#define CREATE_ISR(ISR_num) idt_create_entry(&IDT[ISR_num], (uint32_t)isr##ISR_num, KERNEL_CODE_SELECTOR, 0x8E)
+#define CREATE_IRQ(IRQ_num, IDT_num) idt_create_entry(&IDT[IDT_num], (uint32_t)irq##IRQ_num, KERNEL_CODE_SELECTOR, 0x8E)
 
     extern void isr0();
     extern void isr1();
