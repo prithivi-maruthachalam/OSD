@@ -7,6 +7,7 @@
 #include <stdio.h>
 
 uint8_t scancode;
+uint8_t lastScancode = 0;
 
 struct status
 {
@@ -119,6 +120,7 @@ void keyboard_handler(struct registers_state regs)
     {
         switch (scancode)
         {
+        // Control
         case 0x1D:
             status.control = 1;
             break;
@@ -126,13 +128,13 @@ void keyboard_handler(struct registers_state regs)
             status.control = 0;
             break;
 
+        // Shift
         case 0x2A:
             status.shift = 1;
             break;
         case 0xAA:
             status.shift = 0;
             break;
-
         case 0x36:
             status.shift = 1;
             break;
@@ -140,6 +142,7 @@ void keyboard_handler(struct registers_state regs)
             status.shift = 0;
             break;
 
+        // Alt
         case 0x38:
             status.alt = 1;
             break;
@@ -147,8 +150,19 @@ void keyboard_handler(struct registers_state regs)
             status.alt = 0;
             break;
 
+        // Caps lock
         case 0x3A:
             status.capsLock = (status.capsLock == 0) ? 1 : 0;
+            break;
+
+        // numlock
+        case 0x45:
+            status.numLock = (status.numLock == 0) ? 1 : 0;
+            break;
+
+        // Scroll lock
+        case 0x46:
+            status.scrollLock = (status.scrollLock == 0) ? 1 : 0;
             break;
 
         case 0x3B:
@@ -186,18 +200,6 @@ void keyboard_handler(struct registers_state regs)
         case 0x44:
             // printf("F10 pressed\n");
             break;
-        case 0x45:
-            status.numLock = 1;
-            break;
-        case 0xC5:
-            status.numLock = 0;
-            break;
-        case 0x46:
-            status.scrollLock = 1;
-            break;
-        case 0xC6:
-            status.scrollLock = 0;
-            break;
         case 0x57:
             // printf("F11 pressed\n");
             break;
@@ -208,6 +210,7 @@ void keyboard_handler(struct registers_state regs)
             break;
         }
     }
+    lastScancode = scancode;
     UNUSED(regs);
 }
 

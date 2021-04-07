@@ -81,13 +81,30 @@ void terminal_putchar(char c)
         return;
     }
 
+    if (c == '\t')
+    {
+        tty_column += 4;
+        return;
+    }
+
+    if (c == 8)
+    {
+        if (tty_column-- == 0)
+        {
+            tty_column = 0;
+        }
+        const size_t index = tty_row * VGA_WIDTH + tty_column;
+        tty_buffer[index] = vga_entry(' ', tty_color);
+        return;
+    }
+
     const size_t index = tty_row * VGA_WIDTH + tty_column;
     tty_buffer[index] = vga_entry((unsigned char)c, tty_color);
 
-    if (++tty_column == VGA_WIDTH)
+    if (++tty_column >= VGA_WIDTH)
     {
         tty_column = 0;
-        if (++tty_row == VGA_HEIGHT)
+        if (++tty_row >= VGA_HEIGHT)
         {
             terminal_scroll();
         }
