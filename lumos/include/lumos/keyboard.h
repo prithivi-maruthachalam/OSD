@@ -5,7 +5,7 @@
 #define KBD_ENC_COMMAND_PORT 0x60
 #define KBD_ENC_DATA_PORT 0x60
 #define KBD_CTL_COMMAND_PORT 0x64
-#define KBD_CTL_STATUS_PORT 0x64
+#define KBD_CTL_STATUS_REGISTER 0x64
 #define KBD_CTL_DATA_PORT 0x60
 
 //  Status Masks
@@ -24,6 +24,14 @@
 #define ALT 0x04
 #define CAPS 0x08
 #define NUM_LOCK 0x10
+
+// Commands & return codes
+#define KBD_ENC_SELF_TEST 0xFF
+#define KBD_ENC_SELF_TEST_SUCCESS 0xAA
+#define KBD_ACK 0xFA
+#define KBD_CTL_SELF_TEST 0xAA
+#define KBD_CTL_SELF_TEST_SUCCESS 0x55
+#define KBD_ENC_RESEND 0xFE
 
 void init_keyboard();
 

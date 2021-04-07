@@ -31,9 +31,8 @@ uint32_t clock_ticks()
 void init_timer(uint32_t targetFrequency)
 {
     outb(PIC_MASTER_DATA_PORT, 0xFE);
-    outb(PIC_SLAVE_DATA_PORT, 0x00);
+    outb(PIC_SLAVE_DATA_PORT, 0xFF);
 
-    asm volatile("cli");
     register_interrupt_handler(32, (uint32_t)timer_tick);
 
     CLOCKS_PER_SECOND = targetFrequency;
@@ -42,6 +41,4 @@ void init_timer(uint32_t targetFrequency)
     outb(PIT_CHANNEL0_COMMAND, 0x36);
     outb(PIT_CHANNEL0_DATA, (uint8_t)(divider & 0x00FF));
     outb(PIT_CHANNEL0_DATA, (uint8_t)(divider >> 8) & 0x00FF);
-
-    asm volatile("sti");
 }
