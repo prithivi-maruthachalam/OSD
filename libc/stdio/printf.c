@@ -133,7 +133,7 @@ int printf(const char *restrict format_str, ...)
         else if (*format_str == 'x')
         {
             // integers
-            const int num = va_arg(params, int);
+            const int num = va_arg(params, unsigned long int);
             char str[12];
             itoa(num, str, 16);
             size_t len = strlen(str);

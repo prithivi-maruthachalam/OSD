@@ -1,6 +1,7 @@
 #include <stdlib.h>
+#include <stdint.h>
 
-char *itoa(int num, char *buf, unsigned int radix)
+char *itoa(unsigned long int num, char *buf, unsigned int radix)
 {
     int i = 0;
     int j = 0;
@@ -13,7 +14,7 @@ char *itoa(int num, char *buf, unsigned int radix)
     }
 
     // Don't really need signed support for other radices
-    if (num < 0)
+    if (radix == 10 && (signed long int)num < 0)
     {
         num = 0 - num;
         if (radix == 10)
@@ -25,7 +26,7 @@ char *itoa(int num, char *buf, unsigned int radix)
 
     while (num > 0)
     {
-        int digit = num % radix;
+        uint32_t digit = (radix != 10) ? (uint32_t)num % radix : num % radix;
         buf[i] = (digit > 9) ? 'A' + (digit - 10) : (digit) + '0';
         num = num / radix;
         i++;

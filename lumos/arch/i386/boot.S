@@ -91,10 +91,14 @@ _start:
     movl $0, boot_page_directory + 0
     
     # TODO: invlpg isn't supported by i386. Write a kernel routine
-    movl %cr3, %eax
-    movl %eax, %cr3
+    movl %cr3, %ecx
+    movl %ecx, %cr3
 
     movl $stack_top, %esp # move the address of stack top into the stack pointer | stack grows downward so forget about stack_bottom
+    // multiboot magic number and pointer to multiboot info
+    push %eax
+    add $VIRTUAL_KERNEL_OFFSET, %ebx
+    push %ebx
     call _init # init comes first in order to set up crtbegin.o - perform initialisations for C libraries
     # NOTE: call pushes the return address to the stack. Don't worry about that
     call kernel_main # guess again, stupid

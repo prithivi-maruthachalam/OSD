@@ -6,6 +6,6 @@
 // Kernel panic - abnormally terminate process like SIGABRT
 __attribute__((__noreturn__)) void abort();
 
-char *itoa(int, char *, unsigned int);
+char *itoa(unsigned long int, char *, unsigned int);
 
 #endif
