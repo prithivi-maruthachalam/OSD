@@ -48,7 +48,7 @@ _start:
     movl $1023, %ecx # loop instruction handeles this by itself
     
 1:
-    cmpl $_kernel_start, %esi
+    cmpl $0, %esi
     jl 2f
     cmpl $(_kernel_end - VIRTUAL_KERNEL_OFFSET), %esi 
     jge 3f  # finished allocating bytes for kernel, let's leave

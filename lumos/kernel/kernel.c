@@ -8,7 +8,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 
-void kernel_main(uint32_t ebx, uint32_t eax)
+void kernel_main(multiboot_info_t *ebx, uint32_t eax)
 {
     terminal_init();
     gdt_init();
@@ -21,8 +21,8 @@ void kernel_main(uint32_t ebx, uint32_t eax)
     printf("[kernel_main]: PS/2 keyboard driver initialized\n");
 
     printf("EAX: %x\n", eax);
-    printf("EBX: %x\n", (unsigned long int)0xC0010000);
-    printf("dfsdf: %d\n", -34);
+    printf("EBX: %x\n", ebx);
+    printf("mmap_addr: %x\n", ebx->mmap_addr);
 
     for (;;)
         ;
