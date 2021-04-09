@@ -8,7 +8,19 @@
 #include <stdlib.h>
 #include <stdint.h>
 
-void kernel_main(multiboot_info_t *ebx, uint32_t eax)
+#define VIRTUAL_KERNEL_OFFSET 0xC0000000
+
+struct mmap_entry_t
+{
+    uint32_t size;
+    uint32_t base_low;
+    uint32_t base_high;
+    uint32_t length_low;
+    uint32_t length_high;
+    uint32_t type;
+};
+
+void kernel_main(multiboot_info_t *mbt, uint32_t eax)
 {
     terminal_init();
     gdt_init();
@@ -20,9 +32,22 @@ void kernel_main(multiboot_info_t *ebx, uint32_t eax)
     init_keyboard();
     printf("[kernel_main]: PS/2 keyboard driver initialized\n");
 
-    printf("EAX: %x\n", eax);
-    printf("EBX: %x\n", ebx);
-    printf("mmap_addr: %x\n", ebx->mmap_addr);
+    printf("\nFound multiboot info at %x\n", mbt);
+    struct mmap_entry_t *entry = (struct mmap_entry_t *)(mbt->mmap_addr + 0xC0000000);
+    if (mbt->flags & 0x40)
+    {
+        printf("Found BIOS memory map at %x of size %d bytes\n", entry, mbt->mmap_length);
+        while (entry < (struct mmap_entry_t *)(mbt->mmap_addr + mbt->mmap_length + VIRTUAL_KERNEL_OFFSET))
+        {
+
+            printf("base: %x\tlength:%x\ttype:%d\n", entry->base_low, entry->length_low, entry->type);
+            entry = (struct mmap_entry_t *)((unsigned int)entry + entry->size + sizeof(entry->size));
+        }
+    }
+    else
+    {
+        printf("GRUB has not given a BIOS memory map\n");
+    }
 
     for (;;)
         ;
