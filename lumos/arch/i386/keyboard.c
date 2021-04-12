@@ -17,7 +17,18 @@ struct status
     uint8_t numLock;
     uint8_t scrollLock;
     uint8_t alt;
-} status;
+} status2;
+
+// Status bit structure
+/*
+0 - control
+1 - shift
+2 - capsLock
+3 - numLock
+4 - scrollLock
+5 - alt
+*/
+uint8_t status = 0;
 
 unsigned char kbdus[128] =
     {
@@ -96,13 +107,13 @@ void keyboard_handler(struct registers_state regs);
 void keyboard_handler(struct registers_state regs)
 {
     scancode = inb(KBD_CTL_DATA_PORT);
-    uint8_t temp = (status.shift == 0) ? kbdus[scancode] : kbdus_shift[scancode];
+    uint8_t temp = ((status & SHIFT) == 0) ? kbdus[scancode] : kbdus_shift[scancode];
 
     if (((scancode & 0x80) == 0) && temp)
     {
-        if (status.capsLock && ((65 <= temp && temp <= 90) || (97 <= temp && temp <= 122)))
+        if (((status & CAPS_LOCK) != 0) && ((65 <= temp && temp <= 90) || (97 <= temp && temp <= 122)))
         {
-            if (!status.shift)
+            if ((status & SHIFT) == 0)
             {
                 printf("%c", kbdus_shift[scancode]);
             }
@@ -122,47 +133,47 @@ void keyboard_handler(struct registers_state regs)
         {
         // Control
         case 0x1D:
-            status.control = 1;
+            status |= CTRL;
             break;
         case 0x9D:
-            status.control = 0;
+            status &= ~CTRL;
             break;
 
         // Shift
         case 0x2A:
-            status.shift = 1;
+            status |= SHIFT;
             break;
         case 0xAA:
-            status.shift = 0;
+            status &= ~SHIFT;
             break;
         case 0x36:
-            status.shift = 1;
+            status |= SHIFT;
             break;
         case 0xB6:
-            status.shift = 0;
+            status &= ~SHIFT;
             break;
 
         // Alt
         case 0x38:
-            status.alt = 1;
+            status |= ALT;
             break;
         case 0xB8:
-            status.alt = 0;
+            status &= ~ALT;
             break;
 
         // Caps lock
         case 0x3A:
-            status.capsLock = (status.capsLock == 0) ? 1 : 0;
+            status ^= CAPS_LOCK;
             break;
 
         // numlock
         case 0x45:
-            status.numLock = (status.numLock == 0) ? 1 : 0;
+            status ^= NUM_LOCK;
             break;
 
         // Scroll lock
         case 0x46:
-            status.scrollLock = (status.scrollLock == 0) ? 1 : 0;
+            status ^= SCROLL_LOCK;
             break;
 
         case 0x3B:
@@ -224,10 +235,7 @@ void init_keyboard()
         inb(KBD_CTL_DATA_PORT);
     }
 
-    status.control = 0;
-    status.shift = 0;
-    status.alt = 0;
-    status.capsLock = 0;
+    status = 0;
 
     outb(PIC_MASTER_DATA_PORT, 0xFC);
     outb(PIC_SLAVE_DATA_PORT, 0xFF);

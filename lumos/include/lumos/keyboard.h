@@ -18,12 +18,13 @@
 #define TIMEOUT 0x40
 #define PARITY_ERROR 0x80
 
-// keys_status masks
+// Status bit masks
 #define CTRL 0x01
 #define SHIFT 0x02
-#define ALT 0x04
-#define CAPS 0x08
-#define NUM_LOCK 0x10
+#define CAPS_LOCK 0x04
+#define NUM_LOCK 0x08
+#define SCROLL_LOCK 0x10
+#define ALT 0x20
 
 // Commands & return codes
 #define KBD_ENC_SELF_TEST 0xFF
