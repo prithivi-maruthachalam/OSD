@@ -5,7 +5,7 @@ VIRTUAL_KERNEL_OFFSET = 0xC0000000;
 SECTIONS
 {
     . = 1M; /* Convention - to be used by BIOS and other stuff? */
-    _kernel_start = .;
+    
 
     /* 4K for each section - ring a bell? - page sizes */
     .multiboot ALIGN(4K) :
@@ -19,6 +19,7 @@ SECTIONS
     }
 
     . += VIRTUAL_KERNEL_OFFSET;
+    _kernel_start = .;
 
     .text ALIGN(4K) : AT(ADDR(.text) - VIRTUAL_KERNEL_OFFSET) 
     {

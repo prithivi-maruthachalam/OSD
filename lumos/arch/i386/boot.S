@@ -12,6 +12,7 @@ Calls the kernel main
 .set FLAGS, ALIGN | MEMINFO
 .set CHECKSUM, -(MAGIC + FLAGS)
 
+#extern VIRTUAL_KERNEL_OFFSET
 .set VIRTUAL_KERNEL_OFFSET, 0xC0000000;
 # the actual multiboot header
 # aw and progbits are required to put it above the text section in the elf

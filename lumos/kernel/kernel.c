@@ -20,8 +20,14 @@ struct mmap_entry_t
     uint32_t type;
 };
 
+extern uint32_t _kernel_start;
+extern uint32_t _kernel_end;
+
 void kernel_main(multiboot_info_t *mbt, uint32_t eax)
 {
+    uint32_t kernel_end = &_kernel_end;
+    uint32_t kernel_start = &_kernel_start;
+
     terminal_init();
     gdt_init();
     printf("[kernel_main]: GDT initialized\n");
@@ -48,6 +54,10 @@ void kernel_main(multiboot_info_t *mbt, uint32_t eax)
     {
         printf("GRUB has not given a BIOS memory map\n");
     }
+
+    printf("Kernel starts at: %x\n", kernel_start);
+    printf("Kernel ends at: %x\n", kernel_end);
+    printf("Kernel size: %d bytes\n", kernel_end - kernel_start);
 
     for (;;)
         ;
