@@ -8,7 +8,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 
-#define VIRTUAL_KERNEL_OFFSET 0xC0000000
+// #define VIRTUAL_KERNEL_OFFSET_LD 0xC0000000
 
 struct mmap_entry_t
 {
@@ -22,11 +22,13 @@ struct mmap_entry_t
 
 extern uint32_t _kernel_start;
 extern uint32_t _kernel_end;
+extern uint32_t VIRTUAL_KERNEL_OFFSET_LD;
 
 void kernel_main(multiboot_info_t *mbt, uint32_t eax)
 {
-    uint32_t kernel_end = &_kernel_end;
-    uint32_t kernel_start = &_kernel_start;
+    uintptr_t kernel_end = (uintptr_t)&_kernel_end;
+    uintptr_t kernel_start = (uintptr_t)&_kernel_start;
+    uintptr_t VIRTUAL_KERNEL_OFFSET = (uintptr_t)&VIRTUAL_KERNEL_OFFSET_LD;
 
     terminal_init();
     gdt_init();
@@ -36,17 +38,16 @@ void kernel_main(multiboot_info_t *mbt, uint32_t eax)
     init_timer(50);
     printf("[kernel_main]: timer initialized\n");
     init_keyboard();
-    printf("[kernel_main]: PS/2 keyboard driver initialized\n");
+    printf("[kernel_main]: PS/2 keyboard driver initialized\n\n");
 
-    printf("\nFound multiboot info at %x\n", mbt);
-    struct mmap_entry_t *entry = (struct mmap_entry_t *)(mbt->mmap_addr + 0xC0000000);
+    struct mmap_entry_t *entry = (struct mmap_entry_t *)(mbt->mmap_addr + VIRTUAL_KERNEL_OFFSET);
     if (mbt->flags & 0x40)
     {
         printf("Found BIOS memory map at %x of size %d bytes\n", entry, mbt->mmap_length);
         while (entry < (struct mmap_entry_t *)(mbt->mmap_addr + mbt->mmap_length + VIRTUAL_KERNEL_OFFSET))
         {
 
-            printf("base: %x\tlength:%x\ttype:%d\n", entry->base_low, entry->length_low, entry->type);
+            printf("base: %x\tlength:%x\ttype:%d(%s)\n", entry->base_low, entry->length_low, entry->type, (entry->type == 1) ? "Usable" : "Reserved");
             entry = (struct mmap_entry_t *)((unsigned int)entry + entry->size + sizeof(entry->size));
         }
     }

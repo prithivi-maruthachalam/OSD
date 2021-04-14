@@ -14,6 +14,7 @@ Calls the kernel main
 
 #extern VIRTUAL_KERNEL_OFFSET
 .set VIRTUAL_KERNEL_OFFSET, 0xC0000000;
+#.extern VIRTUAL_KERNEL_OFFSET
 # the actual multiboot header
 # aw and progbits are required to put it above the text section in the elf
 # progbits inform that this is a section that contains initialised data and instructions
