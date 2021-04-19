@@ -45,26 +45,20 @@ boot_page_table1:
 .global _start # needs to be gloabal so that the linker can find it
 .type _start, @function # tells the assembler that _start is a function
 _start: 
+    
+    # making 1024 page table entries for the kernel
     movl $(boot_page_table1 - VIRTUAL_KERNEL_OFFSET), %edi    # page table entry address
-    movl $0, %esi   # physical memeory
-    movl $1023, %ecx # loop instruction handeles this by itself
+    movl $0, %esi       # physical memeory
+    movl $1023, %ecx    # loop instruction handeles this by itself
     
 1:
-    cmpl $0, %esi
-    jl 2f
-    cmpl $(_kernel_end - VIRTUAL_KERNEL_OFFSET), %esi 
-    jge 3f  # finished allocating bytes for kernel, let's leave
-
-    # esi is greater than or equal to kernel start
-    # allocate pages
     movl %esi, %edx
     orl $0x003, %edx
     movl %edx, (%edi) 
 
-2:
-    addl $4096, %esi    # each page is 4KB
-    addl $4, %edi         # each entry is 4 bytes
-    loop 1b    # this also decerments ecx
+    addl $4096, %esi    # increment physical memory address
+    addl $4, %edi       # increment page table index
+    loop 1b             # this also decerments ecx
 
 3: # map video memory
     movl $(0x000B8000 | 0x003), boot_page_table1 - VIRTUAL_KERNEL_OFFSET + (1023 * 4)
