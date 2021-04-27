@@ -3,4 +3,4 @@
 
 . ./iso.sh
 
-qemu-system-i386 -d int -cdrom theOS.iso
+qemu-system-i386 -m 4G -d int -cdrom theOS.iso

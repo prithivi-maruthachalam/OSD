@@ -45,7 +45,7 @@ char *exception_messages[] = {
     "Reserved",
     "Reserved"};
 
-void isr_handler(struct registers_state regs, uint32_t ISR_num, uint32_t errorCode)
+void isr_handler(struct registers_state regs, uint32_t ISR_num, uint32_t errorCode, uint32_t EIP)
 {
     printf("\nReceived exception :: GATE %d\n", ISR_num);
     /* TODO:
@@ -53,7 +53,8 @@ void isr_handler(struct registers_state regs, uint32_t ISR_num, uint32_t errorCo
         else print message and halt
     */
 
-    printf("%s(%d)", exception_messages[ISR_num], errorCode);
+    printf("%s(%d)\n", exception_messages[ISR_num], errorCode);
+    printf("Exception occurred @ %x\n", EIP);
     asm volatile("hlt");
     for (;;)
         ;

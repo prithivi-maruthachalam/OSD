@@ -1,5 +1,5 @@
 #ifndef TTY_H
-#define TTY_H 1
+#define TTY_H
 
 #include <stddef.h>
 

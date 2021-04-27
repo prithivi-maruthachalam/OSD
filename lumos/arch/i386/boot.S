@@ -92,7 +92,6 @@ _start:
 
     movl $stack_top, %esp # move the address of stack top into the stack pointer | stack grows downward so forget about stack_bottom
     // multiboot magic number and pointer to multiboot info
-    push %eax
     add $VIRTUAL_KERNEL_OFFSET, %ebx
     push %ebx
     call _init # init comes first in order to set up crtbegin.o - perform initialisations for C libraries
