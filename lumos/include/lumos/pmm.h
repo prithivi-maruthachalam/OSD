@@ -31,9 +31,19 @@ struct mmap_entry_t
 // Structure to create a linked list of zones
 struct zone
 {
-    uintptr_t buddyMaps;
+    uint32_t totalSize;
+    uint32_t zonePhysicalSize;
+    struct pool *poolStart;
+    struct pool *poolEnd;
     struct zone *nextZone;
-    uint8_t flags;
+} __attribute__((packed));
+
+struct pool
+{
+    uint32_t poolSize;
+    uint32_t *poolStart;
+    uint32_t poolPhysicalSize;
+    struct pool *nextPool;
 } __attribute__((packed));
 
 extern uint32_t _kernel_start;
