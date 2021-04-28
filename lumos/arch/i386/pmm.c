@@ -47,6 +47,7 @@ void init_pmm(multiboot_info_t *mbtStructure)
         */
         if (section->base_high || section->type != 1)
         {
+
             section = (struct mmap_entry_t *)((uint32_t)section + (uint32_t)section->size + sizeof(section->size));
             continue;
         }
@@ -57,12 +58,14 @@ void init_pmm(multiboot_info_t *mbtStructure)
         if (section->base_low > DMA_MAX_ADDRESS || zone_DMA->totalSize >= DMA_TOTAL_SIZE)
         {
             // Add this section as a NORMAl zone pool
+            printf("Normal section\n");
+            section = (struct mmap_entry_t *)((uint32_t)section + (uint32_t)section->size + sizeof(section->size));
         }
         else
         {
             // create a new DMA pool and add it to the existing list
             currentPool = (struct pool *)((uint32_t)zone_DMA + zone_DMA->zonePhysicalSize);
-            currentPool->poolStart = (uint32_t *)section->base_low;
+            currentPool->start = (uint32_t *)section->base_low;
             currentPool->nextPool = NULL;
             if (zone_DMA->poolStart == NULL || zone_DMA->poolEnd == NULL)
             {
@@ -77,9 +80,36 @@ void init_pmm(multiboot_info_t *mbtStructure)
             }
             zone_DMA->poolEnd = currentPool; // update poolEnd
             zone_DMA->zonePhysicalSize += sizeof(struct pool);
-            printf("\t\tNew pool added @ %x with \n", zone_DMA->poolEnd);
+            printf("\t\tNew pool added @ %x with ", zone_DMA->poolEnd);
+
+            if (section->length_low < (DMA_TOTAL_SIZE - zone_DMA->totalSize) && ((uint32_t)currentPool->start + section->length_low - 1) <= DMA_MAX_ADDRESS)
+            {
+                currentPool->poolSize = section->length_low;
+                zone_DMA->totalSize += section->length_low;
+                // TODO: Build buddies for that
+                printf("Full addition\n");
+
+                // move to next section
+                section = (struct mmap_entry_t *)((uint32_t)section + (uint32_t)section->size + sizeof(section->size));
+                continue;
+            }
+            else if ((DMA_MAX_ADDRESS - (uint32_t)currentPool->start + 1) < (DMA_TOTAL_SIZE - zone_DMA->totalSize))
+            {
+                currentPool->poolSize = DMA_MAX_ADDRESS - (uint32_t)currentPool->start + 1;
+                // TODO: Build buddies for that size
+                printf("Partial addition because 16MB thing\n");
+            }
+            else
+            {
+                currentPool->poolSize = DMA_TOTAL_SIZE - zone_DMA->totalSize;
+                printf("Partial addition because 256KB thing\n");
+            }
+
+            // Update zone and section details
+            zone_DMA->totalSize += currentPool->poolSize; // Increase zone size
+            section->base_low += currentPool->poolSize;   // Advance start of current section
+            section->length_low -= currentPool->poolSize; // Reduce size of current section
         }
-        section = (struct mmap_entry_t *)((uint32_t)section + (uint32_t)section->size + sizeof(section->size));
     }
 
     printZoneInfo(zone_DMA);
@@ -95,7 +125,8 @@ void printZoneInfo(struct zone *zone)
     while (p != NULL)
     {
         printf("\tPool details: %x\n", p);
-        printf("\t\tPoolStart : %x", p->poolStart);
+        printf("\t\tPoolStart : %x", p->start);
+        printf("\t\tPoolSize : %x", p->poolSize);
         p = p->nextPool;
         printf("\n");
     }

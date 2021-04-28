@@ -41,7 +41,7 @@ struct zone
 struct pool
 {
     uint32_t poolSize;
-    uint32_t *poolStart;
+    uint32_t *start;
     uint32_t poolPhysicalSize;
     struct pool *nextPool;
 } __attribute__((packed));
