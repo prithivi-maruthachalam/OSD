@@ -112,6 +112,7 @@ void init_pmm(multiboot_info_t *mbtStructure)
         }
     }
 
+    printf("\n");
     printZoneInfo(zone_DMA);
 }
 
