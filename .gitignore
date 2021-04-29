@@ -1,0 +1,9 @@
+t_*
+sysroot/
+isodir/
+dumpDir/
+*.kernel
+*.o
+*.d
+*.iso
+*.a
