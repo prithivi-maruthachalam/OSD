@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <stddef.h>
+#include <coolMath.h>
 
 uintptr_t kernel_end = (uintptr_t)&_kernel_end;
 uintptr_t kernel_start = (uintptr_t)&_kernel_start;
@@ -16,9 +17,13 @@ struct zone *zone_normal = NULL;
 // debugging
 void printZoneInfo(struct zone *zone);
 
+// utils
+void makeBuddy(uint32_t *start, uint32_t size, uint8_t order);
+
 void init_pmm(multiboot_info_t *mbtStructure)
 {
-    struct pool *currentPool;
+    struct pool *currentPool; // Do I need this?
+    int i;                    // used as iterator in general
 
     // make sure we have a valid memory map - 6th bit of flags indicates whether the mmap_addr & mmp_length fields are valid
     if (!(mbtStructure->flags & MBT_FLAG_IS_MMAP))
@@ -49,9 +54,13 @@ void init_pmm(multiboot_info_t *mbtStructure)
             continue;
         }
 
+        // DEBUGGING
         // printf("Base: %x\tLength:%x\ttype:%d\n", section->base_low, section->length_low, section->type);
 
-        // Initialisation of DMA and normal zones, in that order
+        /* Add the current section as a pool to the NORMAL zone or the DMA zone. Additions to the
+        DMA zone can be partial or complete base on the 256KB max size and the 16MB address limit */
+
+        // If DMA zone is done, add the entire section as a NORMAL zone pool
         if (section->base_low > DMA_MAX_ADDRESS || zone_DMA->totalSize >= DMA_TOTAL_SIZE)
         {
             // check if this is the first time the normal zone is being considered
@@ -88,9 +97,13 @@ void init_pmm(multiboot_info_t *mbtStructure)
             zone_normal->zonePhysicalSize += sizeof(struct pool);
 
             // TODO: Build a buddy map for the size of the current pool and add the size of the entire map to zonePhysicalSize
+            printf("\n");
+            for (i = 1; i <= 8; i = i << 1)
+                makeBuddy(NULL, currentPool->poolSize, i);
 
             section = (struct mmap_entry_t *)((uint32_t)section + (uint32_t)section->size + sizeof(section->size));
         }
+        // else, we've not given up on DMA yet, add the current section as a DMA pool either entirely or partially
         else
         {
             // create a new DMA pool and add it to the existing list of DMA pools
@@ -116,7 +129,11 @@ void init_pmm(multiboot_info_t *mbtStructure)
                 // adding the entire section as a pool
                 currentPool->poolSize = section->length_low;
                 zone_DMA->totalSize += section->length_low;
+
                 // TODO: Build buddies for that and add the extra size to zonePhysocalSize
+                printf("\n");
+                for (i = 1; i <= 8; i = i << 1)
+                    makeBuddy(NULL, currentPool->poolSize, i);
 
                 // move to next section
                 section = (struct mmap_entry_t *)((uint32_t)section + (uint32_t)section->size + sizeof(section->size));
@@ -134,6 +151,9 @@ void init_pmm(multiboot_info_t *mbtStructure)
             }
 
             // TODO: Build buddies for currentPool->poolSize and add the extra size to zonePhysocalSize
+            printf("\n");
+            for (i = 1; i <= 8; i = i << 1)
+                makeBuddy(NULL, currentPool->poolSize, i);
 
             // Update zone and section details - to create a new section with the remaining size
             zone_DMA->totalSize += currentPool->poolSize; // Increase zone size
@@ -142,10 +162,18 @@ void init_pmm(multiboot_info_t *mbtStructure)
         }
     }
 
-    printf("DMA ");
-    printZoneInfo(zone_DMA);
-    printf("\nNormal");
-    printZoneInfo(zone_normal);
+    // printf("DMA ");
+    // printZoneInfo(zone_DMA);
+    // printf("\nNormal");
+    // printZoneInfo(zone_normal);
+}
+
+// utils
+void makeBuddy(uint32_t *start, uint32_t size, uint8_t order)
+{
+    int blockCount = (size / (BLOCK_SIZE * order));
+    blockCount = ceil_pow2(blockCount);
+    printf("(%x)Buddy - %x bits\n", size, blockCount);
 }
 
 // debugging

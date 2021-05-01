@@ -14,6 +14,7 @@ string/memcpy.o \
 string/memmove.o \
 string/memset.o \
 string/strlen.o \
+coolMath/ceil_pow2.o \
 
 #we will get ehere later from libc.
 HOSTED_OBJS=\
