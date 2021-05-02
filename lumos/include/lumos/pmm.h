@@ -42,10 +42,21 @@ struct zone
 
 struct pool
 {
-    uint32_t poolSize;
-    uint32_t *start;
+    uint32_t poolSize; // size of the memory associated with this pool
+    uint32_t *start;   // starting address of the memory associated with this pool
     uint32_t poolPhysicalSize;
+    struct buddies *poolBuddiesTop;
     struct pool *nextPool;
+} __attribute__((packed));
+
+struct buddy
+{
+    uint8_t buddyOrder;
+    uint32_t blockCount;
+    uint32_t mapWordCount;
+    uint32_t *bitMap;
+    struct buddy *nextBuddy;
+
 } __attribute__((packed));
 
 extern uint32_t _kernel_start;
