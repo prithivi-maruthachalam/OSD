@@ -5,7 +5,9 @@
 #include <stdint.h>
 
 // MISC
-#define BLOCK_SIZE 4096 // 4 KB in bytes
+#define BLOCK_SIZE 4096   // 4 KB in bytes
+#define MAX_BLOCK_ORDER 8 // ORDER * BLOCK_SIZE will be the maximum possible allocation
+
 // Macro to take an order and return the size of a block of that order in bytes
 #define ORDER_TO_SIZE_IN_BYTES(order) ((1 << order) * BLOCK_SIZE)
 
