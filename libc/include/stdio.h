@@ -14,5 +14,6 @@ calling function won't be making any changes to it.
 */
 int putchar(int);
 int puts(const char *);
+int logf(const char *__restrict, ...);
 
 #endif

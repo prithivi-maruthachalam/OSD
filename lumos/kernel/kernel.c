@@ -5,6 +5,7 @@
 #include <lumos/keyboard.h>
 #include <lumos/multiboot.h>
 #include <lumos/pmm.h>
+#include <lumos/com.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -19,7 +20,10 @@ void kernel_main(multiboot_info_t *mbt)
     idt_init();
     init_timer(50);
     init_keyboard();
-    init_pmm(mbt);
+    init_com1();
+    // init_pmm(mbt);
+
+    logf("Testing\n");
 
     for (;;)
         ;

@@ -4,11 +4,12 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <stddef.h>
-#include <coolMath.h>
 
 uintptr_t kernel_end = (uintptr_t)&_kernel_end;
 uintptr_t kernel_start = (uintptr_t)&_kernel_start;
 uintptr_t VIRTUAL_KERNEL_OFFSET = (uintptr_t)&VIRTUAL_KERNEL_OFFSET_LD;
+
+// TODO: Implement a serial port interface for logging -  osdev
 
 // head of the lnked list of zones
 struct zone *zone_DMA = (struct zone *)&_kernel_end;
@@ -97,7 +98,7 @@ void init_pmm(multiboot_info_t *mbtStructure)
             // zone_normal->zonePhysicalSize += sizeof(struct pool);
 
             // TODO: Build a buddy map for the size of the current pool and add the size of the entire map to zonePhysicalSize
-            // makeBuddies(currentPool);
+            makeBuddies(currentPool);
 
             zone_normal->zonePhysicalSize += currentPool->poolPhysicalSize;
             section = (struct mmap_entry_t *)((uint32_t)section + (uint32_t)section->size + sizeof(section->size));
@@ -131,7 +132,7 @@ void init_pmm(multiboot_info_t *mbtStructure)
                 zone_DMA->totalSize += section->length_low;
 
                 // TODO: Build buddies for that and add the extra size to zonePhysocalSize
-                // makeBuddies(currentPool);
+                makeBuddies(currentPool);
                 zone_DMA->zonePhysicalSize += currentPool->poolPhysicalSize;
 
                 // move to next section
@@ -170,10 +171,10 @@ void init_pmm(multiboot_info_t *mbtStructure)
 
 void makeBuddies(struct pool *pool)
 {
-    uint8_t i, j = 1;
+    uint8_t i;
     struct buddy *currentBuddy;
     uint32_t baseBlockSize = 0;
-    // printf("\nPool @ %x | Size : %x\n", pool, pool->poolSize);
+    printf("\nPool @ %x | Size : %x\n", pool, pool->poolSize);
 
     // This will be multiplied with powers of two for the blockCounts
     baseBlockSize = pool->poolSize / (BLOCK_SIZE * MAX_BLOCK_ORDER) + (pool->poolSize % (BLOCK_SIZE * MAX_BLOCK_ORDER) != 0);
@@ -188,10 +189,10 @@ void makeBuddies(struct pool *pool)
         currentBuddy->bitMap = (uint32_t *)((uint32_t)pool + pool->poolPhysicalSize + sizeof(struct buddy));
         pool->poolPhysicalSize += sizeof(struct buddy) + (currentBuddy->mapWordCount * 4); // add size of first bitmap and buddy structure to physicalSize
 
-        // printf("\n\tInitialised buddy @ %x :\n", currentBuddy);
-        // printf("\t\tOrder: %d\n", i);
-        // printf("\t\tBlockCount : %x\n", currentBuddy->blockCount);
-        // printf("\t\tTakes up %x bytes\n", currentBuddy->mapWordCount * 4);
+        printf("\n\tInitialised buddy @ %x :\n", currentBuddy);
+        printf("\t\tOrder: %d\n", i);
+        printf("\t\tBlockCount : %x\n", currentBuddy->blockCount);
+        printf("\t\tTakes up %x bytes\n", currentBuddy->mapWordCount * 4);
     }
 }
 

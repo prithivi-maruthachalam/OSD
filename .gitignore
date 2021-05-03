@@ -2,6 +2,7 @@ t_*
 sysroot/
 isodir/
 dumpDir/
+logs/
 *.kernel
 *.o
 *.d

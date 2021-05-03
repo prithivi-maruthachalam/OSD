@@ -16,6 +16,7 @@ $(ARCH_DIR)/isr.o	\
 $(ARCH_DIR)/timer.o	\
 $(ARCH_DIR)/keyboard.o	\
 $(ARCH_DIR)/pmm.o	\
+$(ARCH_DIR)/com.o	\
 
 
 KERNEL_OBJS=\
