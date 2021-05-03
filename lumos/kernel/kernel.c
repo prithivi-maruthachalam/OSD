@@ -21,9 +21,7 @@ void kernel_main(multiboot_info_t *mbt)
     init_timer(50);
     init_keyboard();
     init_com1();
-    // init_pmm(mbt);
-
-    logf("Testing\n");
+    init_pmm(mbt);
 
     for (;;)
         ;

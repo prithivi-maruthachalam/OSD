@@ -28,7 +28,7 @@ void init_pmm(multiboot_info_t *mbtStructure)
     // make sure we have a valid memory map - 6th bit of flags indicates whether the mmap_addr & mmp_length fields are valid
     if (!(mbtStructure->flags & MBT_FLAG_IS_MMAP))
     {
-        printf("[PMM] : No memory map available\n");
+        logf("[PMM] : No memory map available\n");
         abort();
     }
 
@@ -54,8 +54,7 @@ void init_pmm(multiboot_info_t *mbtStructure)
             continue;
         }
 
-        // DEBUGGING
-        // printf("Base: %x\tLength:%x\ttype:%d\n", section->base_low, section->length_low, section->type);
+        logf("Base: %x\tLength:%x\ttype:%d\n", section->base_low, section->length_low, section->type);
 
         /* Add the current section as a pool to the NORMAL zone or the DMA zone. Additions to the
         DMA zone can be partial or complete base on the 256KB max size and the 16MB address limit */
@@ -161,10 +160,10 @@ void init_pmm(multiboot_info_t *mbtStructure)
         }
     }
 
-    // printf("DMA ");
-    // printZoneInfo(zone_DMA);
-    // printf("\nNormal");
-    // printZoneInfo(zone_normal);
+    logf("DMA ");
+    printZoneInfo(zone_DMA);
+    logf("\nNormal");
+    printZoneInfo(zone_normal);
 }
 
 // utils
@@ -174,7 +173,7 @@ void makeBuddies(struct pool *pool)
     uint8_t i;
     struct buddy *currentBuddy;
     uint32_t baseBlockSize = 0;
-    printf("\nPool @ %x | Size : %x\n", pool, pool->poolSize);
+    logf("\nPool @ %x | Size : %x\n", pool, pool->poolSize);
 
     // This will be multiplied with powers of two for the blockCounts
     baseBlockSize = pool->poolSize / (BLOCK_SIZE * MAX_BLOCK_ORDER) + (pool->poolSize % (BLOCK_SIZE * MAX_BLOCK_ORDER) != 0);
@@ -189,26 +188,26 @@ void makeBuddies(struct pool *pool)
         currentBuddy->bitMap = (uint32_t *)((uint32_t)pool + pool->poolPhysicalSize + sizeof(struct buddy));
         pool->poolPhysicalSize += sizeof(struct buddy) + (currentBuddy->mapWordCount * 4); // add size of first bitmap and buddy structure to physicalSize
 
-        printf("\n\tInitialised buddy @ %x :\n", currentBuddy);
-        printf("\t\tOrder: %d\n", i);
-        printf("\t\tBlockCount : %x\n", currentBuddy->blockCount);
-        printf("\t\tTakes up %x bytes\n", currentBuddy->mapWordCount * 4);
+        logf("\n\tInitialised buddy @ %x :\n", currentBuddy);
+        logf("\t\tOrder: %d\n", i);
+        logf("\t\tBlockCount : %x\n", currentBuddy->blockCount);
+        logf("\t\tTakes up %x bytes\n", currentBuddy->mapWordCount * 4);
     }
 }
 
 // debugging
 void printZoneInfo(struct zone *zone)
 {
-    printf("Zone info @ %x: \n", zone);
-    printf(" totalSize: %x\n", zone->totalSize);
-    printf(" physicalSize: %x\n", zone->zonePhysicalSize);
+    logf("Zone info @ %x: \n", zone);
+    logf(" totalSize: %x\n", zone->totalSize);
+    logf(" physicalSize: %x\n", zone->zonePhysicalSize);
     struct pool *p = zone->poolStart;
     while (p != NULL)
     {
-        printf(" Pool details: %x\n", p);
-        printf("\tPoolStart : %x", p->start);
-        printf("\tPoolSize : %x bytes", p->poolSize);
+        logf(" Pool details: %x\n", p);
+        logf("\tPoolStart : %x", p->start);
+        logf("\tPoolSize : %x bytes", p->poolSize);
         p = p->nextPool;
-        printf("\n");
+        logf("\n");
     }
 }
