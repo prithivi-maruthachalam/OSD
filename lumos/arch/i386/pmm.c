@@ -182,12 +182,45 @@ void set_bit(uint32_t *mapStart, uint32_t offset)
 {
     mapStart[offset / 32] |= 1 << (offset % 32);
 }
-void set_bits(uint32_t *mapStart, uint32_t offsetStart, uint32_t offsetEnd);
+
+void set_bits(uint32_t *mapStart, uint32_t offsetStart, uint32_t offsetEnd)
+{
+    uint32_t i;
+    for (i = offsetStart; i <= offsetEnd && i % 32 != 0; i++)
+    {
+        set_bit(mapStart, i);
+    }
+    for (; i + 32 <= offsetEnd; i = i + 32)
+    {
+        mapStart[i / 32] = 0xFFFFFFFF;
+    }
+    for (; i <= offsetEnd; i++)
+    {
+        set_bit(mapStart, i);
+    }
+}
+
 void unset_bit(uint32_t *mapStart, uint32_t offset)
 {
     mapStart[offset / 32] &= ~(1 << (offset % 32));
 }
-void unset_bits(uint32_t *mapStart, uint32_t offsetStart, uint32_t offsetEnd);
+
+void unset_bits(uint32_t *mapStart, uint32_t offsetStart, uint32_t offsetEnd)
+{
+    uint32_t i;
+    for (i = offsetStart; i <= offsetEnd && i % 32 != 0; i++)
+    {
+        unset_bit(mapStart, i);
+    }
+    for (; i + 32 <= offsetEnd; i = i + 32)
+    {
+        mapStart[i / 32] = 0;
+    }
+    for (; i <= offsetEnd; i++)
+    {
+        unset_bit(mapStart, i);
+    }
+}
 
 void makeBuddies(struct pool *pool)
 {
