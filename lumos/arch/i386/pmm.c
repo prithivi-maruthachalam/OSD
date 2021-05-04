@@ -20,6 +20,10 @@ void printZoneInfo(struct zone *zone);
 
 // utils
 void makeBuddies(struct pool *pool);
+void set_bit(uint32_t *mapStart, uint32_t offset);                             // set a single bit
+void set_bits(uint32_t *mapStart, uint32_t offsetStart, uint32_t offsetEnd);   // set a section of bits
+void unset_bit(uint32_t *mapStart, uint32_t offset);                           // unset a single bit
+void unset_bits(uint32_t *mapStart, uint32_t offsetStart, uint32_t offsetEnd); // unset a section of bits
 
 void init_pmm(multiboot_info_t *mbtStructure)
 {
@@ -34,6 +38,7 @@ void init_pmm(multiboot_info_t *mbtStructure)
 
     // Initialize the DMA zone descriptor
     zone_DMA->totalSize = 0;
+    zone_DMA->freeMem = 0;
     zone_DMA->poolStart = NULL;
     zone_DMA->poolEnd = NULL;
     zone_DMA->nextZone = NULL;
@@ -67,6 +72,7 @@ void init_pmm(multiboot_info_t *mbtStructure)
             {
                 zone_normal = (struct zone *)((uint32_t)zone_DMA + zone_DMA->zonePhysicalSize); // put the normal zone structure right after all the DMA zone - related data
                 zone_normal->totalSize = 0;
+                zone_normal->freeMem = 0;
                 zone_normal->poolStart = NULL;
                 zone_normal->poolEnd = NULL;
                 zone_normal->nextZone = NULL;
@@ -79,6 +85,7 @@ void init_pmm(multiboot_info_t *mbtStructure)
             currentPool = (struct pool *)((uint32_t)zone_normal + zone_normal->zonePhysicalSize);
             currentPool->start = (uint32_t *)section->base_low;
             currentPool->poolSize = section->length_low;
+            currentPool->freeMem = section->length_low;
             currentPool->nextPool = NULL;
             currentPool->poolPhysicalSize = sizeof(struct pool);
             if (zone_normal->poolStart == NULL || zone_normal->poolEnd == NULL)
@@ -92,9 +99,9 @@ void init_pmm(multiboot_info_t *mbtStructure)
                 zone_normal->poolEnd->nextPool = currentPool;
             }
 
+            zone_normal->totalSize += section->length_low;
+            zone_normal->freeMem += section->length_low;
             zone_normal->poolEnd = currentPool;
-            zone_normal->totalSize += currentPool->poolSize;
-            // zone_normal->zonePhysicalSize += sizeof(struct pool);
 
             // TODO: Build a buddy map for the size of the current pool and add the size of the entire map to zonePhysicalSize
             makeBuddies(currentPool);
@@ -121,14 +128,15 @@ void init_pmm(multiboot_info_t *mbtStructure)
                 zone_DMA->poolEnd->nextPool = currentPool;
             }
             zone_DMA->poolEnd = currentPool; // update poolEnd
-            // zone_DMA->zonePhysicalSize += sizeof(struct pool);
 
             // Make a decision on how much of the current section is to be added as DMA pool
             if (section->length_low < (DMA_TOTAL_SIZE - zone_DMA->totalSize) && ((uint32_t)currentPool->start + section->length_low - 1) <= DMA_MAX_ADDRESS)
             {
                 // adding the entire section as a pool
                 currentPool->poolSize = section->length_low;
+                currentPool->freeMem = section->length_low;
                 zone_DMA->totalSize += section->length_low;
+                zone_DMA->freeMem += section->length_low;
 
                 // TODO: Build buddies for that and add the extra size to zonePhysocalSize
                 makeBuddies(currentPool);
@@ -149,14 +157,17 @@ void init_pmm(multiboot_info_t *mbtStructure)
                 currentPool->poolSize = DMA_TOTAL_SIZE - zone_DMA->totalSize;
             }
 
-            // TODO: Build buddies for currentPool->poolSize and add the extra size to zonePhysocalSize
-            makeBuddies(currentPool);
-            zone_DMA->zonePhysicalSize += currentPool->poolPhysicalSize;
+            currentPool->freeMem = currentPool->poolSize; // init free mem for this pool
 
             // Update zone and section details - to create a new section with the remaining size
             zone_DMA->totalSize += currentPool->poolSize; // Increase zone size
+            zone_DMA->freeMem += currentPool->poolSize;
             section->base_low += currentPool->poolSize;   // Advance start of current section
             section->length_low -= currentPool->poolSize; // Reduce size of current section
+
+            // TODO: Build buddies for currentPool->poolSize and add the extra size to zonePhysocalSize
+            makeBuddies(currentPool);
+            zone_DMA->zonePhysicalSize += currentPool->poolPhysicalSize;
         }
     }
 
@@ -167,12 +178,24 @@ void init_pmm(multiboot_info_t *mbtStructure)
 }
 
 // utils
+void set_bit(uint32_t *mapStart, uint32_t offset)
+{
+    mapStart[offset / 32] |= 1 << (offset % 32);
+}
+void set_bits(uint32_t *mapStart, uint32_t offsetStart, uint32_t offsetEnd);
+void unset_bit(uint32_t *mapStart, uint32_t offset)
+{
+    mapStart[offset / 32] &= ~(1 << (offset % 32));
+}
+void unset_bits(uint32_t *mapStart, uint32_t offsetStart, uint32_t offsetEnd);
 
 void makeBuddies(struct pool *pool)
 {
     uint8_t i;
     struct buddy *currentBuddy;
     uint32_t baseBlockSize = 0;
+    uint32_t startBit, endBit; // to be used as bitmap indexes (bitwise)
+
     logf("\nPool @ %x | Size : %x\n", pool, pool->poolSize);
 
     // This will be multiplied with powers of two for the blockCounts
@@ -182,16 +205,21 @@ void makeBuddies(struct pool *pool)
     {
         // Initialize the first buddy - right after the end of the pool structure
         currentBuddy = (struct buddy *)((uint32_t)pool + pool->poolPhysicalSize);
-        currentBuddy->buddyOrder = i;
+        currentBuddy->buddyOrder = MAX_BLOCK_ORDER / i;
         currentBuddy->blockCount = baseBlockSize * i;
         currentBuddy->mapWordCount = (currentBuddy->blockCount / 32 + (currentBuddy->blockCount % 32 != 0));
         currentBuddy->bitMap = (uint32_t *)((uint32_t)pool + pool->poolPhysicalSize + sizeof(struct buddy));
         pool->poolPhysicalSize += sizeof(struct buddy) + (currentBuddy->mapWordCount * 4); // add size of first bitmap and buddy structure to physicalSize
 
+        // Bit offsets calculation
+        startBit = 0;
+        endBit = (pool->poolSize / (BLOCK_SIZE * currentBuddy->buddyOrder)) - 1;
+
         logf("\n\tInitialised buddy @ %x :\n", currentBuddy);
-        logf("\t\tOrder: %d\n", i);
+        logf("\t\tOrder: %d\n", currentBuddy->buddyOrder);
         logf("\t\tBlockCount : %x\n", currentBuddy->blockCount);
         logf("\t\tTakes up %x bytes\n", currentBuddy->mapWordCount * 4);
+        logf("\t\tStartBit: %d\tEndBit: %d\n", startBit, endBit);
     }
 }
 
@@ -199,14 +227,16 @@ void makeBuddies(struct pool *pool)
 void printZoneInfo(struct zone *zone)
 {
     logf("Zone info @ %x: \n", zone);
-    logf(" totalSize: %x\n", zone->totalSize);
-    logf(" physicalSize: %x\n", zone->zonePhysicalSize);
+    logf("  totalSize: %x\n", zone->totalSize);
+    logf("  freeMem: %x\n", zone->freeMem);
+    logf("  physicalSize: %x\n", zone->zonePhysicalSize);
     struct pool *p = zone->poolStart;
     while (p != NULL)
     {
         logf(" Pool details: %x\n", p);
         logf("\tPoolStart : %x", p->start);
         logf("\tPoolSize : %x bytes", p->poolSize);
+        logf("\tfreeMem : %x bytes", p->freeMem);
         p = p->nextPool;
         logf("\n");
     }

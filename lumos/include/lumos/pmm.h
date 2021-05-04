@@ -34,6 +34,7 @@ struct mmap_entry_t
 struct zone
 {
     uint32_t totalSize;
+    uint32_t freeMem;
     uint32_t zonePhysicalSize;
     struct pool *poolStart;
     struct pool *poolEnd;
@@ -43,7 +44,8 @@ struct zone
 struct pool
 {
     uint32_t poolSize; // size of the memory associated with this pool
-    uint32_t *start;   // starting address of the memory associated with this pool
+    uint32_t freeMem;
+    uint32_t *start; // starting address of the memory associated with this pool
     uint32_t poolPhysicalSize;
     struct buddies *poolBuddiesTop;
     struct pool *nextPool;
@@ -54,6 +56,7 @@ struct buddy
     uint8_t buddyOrder;
     uint32_t blockCount;
     uint32_t mapWordCount;
+    uint32_t freeBlocks;
     uint32_t *bitMap;
     struct buddy *nextBuddy;
 
