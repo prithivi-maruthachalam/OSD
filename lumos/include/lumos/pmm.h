@@ -33,6 +33,7 @@ struct mmap_entry_t
 // Structure to create a linked list of zones
 struct zone
 {
+    uint8_t zoneType;
     uint32_t totalSize;
     uint32_t freeMem;
     uint32_t zonePhysicalSize;
@@ -45,9 +46,9 @@ struct pool
 {
     uint32_t poolSize; // size of the memory associated with this pool
     uint32_t freeMem;
-    uint32_t *start; // starting address of the memory associated with this pool
+    uint32_t start; // starting address of the memory associated with this pool
     uint32_t poolPhysicalSize;
-    struct buddies *poolBuddiesTop;
+    struct buddy *poolBuddiesTop;
     struct pool *nextPool;
 } __attribute__((packed));
 
