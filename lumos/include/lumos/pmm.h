@@ -38,8 +38,6 @@ struct zone
     uint32_t freeMem;
     uint32_t zonePhysicalSize;
     struct pool *poolStart;
-    struct pool *poolEnd;
-    struct zone *nextZone;
 } __attribute__((packed));
 
 struct pool

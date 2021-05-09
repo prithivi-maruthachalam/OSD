@@ -33,7 +33,8 @@ void unset_bits(uint32_t *mapStart, uint32_t offsetStart, uint32_t offsetEnd); /
 
 void init_pmm(multiboot_info_t *mbtStructure)
 {
-    struct pool *currentPool; // Do I need this?
+    struct pool *currentPool;
+    struct pool *previousPool = NULL;
 
     // make sure we have a valid memory map - 6th bit of flags indicates whether the mmap_addr & mmp_length fields are valid
     if (!(mbtStructure->flags & MBT_FLAG_IS_MMAP))
@@ -47,8 +48,6 @@ void init_pmm(multiboot_info_t *mbtStructure)
     zone_DMA->totalSize = 0;
     zone_DMA->freeMem = 0;
     zone_DMA->poolStart = NULL;
-    zone_DMA->poolEnd = NULL;
-    zone_DMA->nextZone = NULL;
     zone_DMA->zonePhysicalSize = sizeof(struct zone);
 
     // traversing the memory map
@@ -80,11 +79,7 @@ void init_pmm(multiboot_info_t *mbtStructure)
                 zone_normal->totalSize = 0;
                 zone_normal->freeMem = 0;
                 zone_normal->poolStart = NULL;
-                zone_normal->poolEnd = NULL;
-                zone_normal->nextZone = NULL;
                 zone_normal->zonePhysicalSize = sizeof(struct zone);
-
-                zone_DMA->nextZone = zone_normal;
             }
 
             // create a new pool and add it to the existing list of NORMAL pools
@@ -95,24 +90,22 @@ void init_pmm(multiboot_info_t *mbtStructure)
             currentPool->nextPool = NULL;
             currentPool->poolBuddiesTop = NULL;
             currentPool->poolPhysicalSize = sizeof(struct pool);
-            if (zone_normal->poolStart == NULL || zone_normal->poolEnd == NULL)
+            if (zone_normal->poolStart == NULL)
             {
-                // this is the first NORMAL pool
-                zone_normal->poolStart = currentPool;
+                zone_normal->poolStart = currentPool; // this is the first NORMAL pool
             }
             else
             {
-                // just add to list
-                zone_normal->poolEnd->nextPool = currentPool;
+                previousPool->nextPool = currentPool;
             }
 
             zone_normal->totalSize += section->length_low;
             zone_normal->freeMem += section->length_low;
-            zone_normal->poolEnd = currentPool;
 
             makeBuddies(currentPool);
 
             zone_normal->zonePhysicalSize += currentPool->poolPhysicalSize;
+            previousPool = currentPool;
             section = (struct mmap_entry_t *)((uint32_t)section + (uint32_t)section->size + sizeof(section->size));
         }
         // else, we've not given up on DMA yet, add the current section as a DMA pool either entirely or partially
@@ -124,17 +117,15 @@ void init_pmm(multiboot_info_t *mbtStructure)
             currentPool->nextPool = NULL;
             currentPool->poolBuddiesTop = NULL;
             currentPool->poolPhysicalSize = sizeof(struct pool);
-            if (zone_DMA->poolStart == NULL || zone_DMA->poolEnd == NULL)
+            if (zone_DMA->poolStart == NULL)
             {
-                // this is the first DMA pool
-                zone_DMA->poolStart = currentPool;
+                zone_DMA->poolStart = currentPool; // this is the first DMA pool
             }
             else
             {
                 // Add pool to the list
-                zone_DMA->poolEnd->nextPool = currentPool;
+                previousPool->nextPool = currentPool;
             }
-            zone_DMA->poolEnd = currentPool; // update poolEnd
 
             // Make a decision on how much of the current section is to be added as DMA pool
             if (section->length_low < (DMA_TOTAL_SIZE - zone_DMA->totalSize) && (currentPool->start + section->length_low - 1) <= DMA_MAX_ADDRESS)
@@ -148,6 +139,7 @@ void init_pmm(multiboot_info_t *mbtStructure)
                 makeBuddies(currentPool);
                 zone_DMA->zonePhysicalSize += currentPool->poolPhysicalSize;
 
+                previousPool = currentPool;
                 // move to next section
                 section = (struct mmap_entry_t *)((uint32_t)section + section->size + sizeof(section->size));
                 continue;
@@ -173,12 +165,16 @@ void init_pmm(multiboot_info_t *mbtStructure)
 
             makeBuddies(currentPool);
             zone_DMA->zonePhysicalSize += currentPool->poolPhysicalSize;
+
+            previousPool = currentPool;
         }
     }
 
     // reserve space for ther kernel
     uint32_t resSize = zone_DMA->zonePhysicalSize + zone_normal->zonePhysicalSize + kernel_end - kernel_start;
     uint32_t resStart = (uint32_t)kernel_start - VIRTUAL_KERNEL_OFFSET;
+
+    // currentPool = zone_normal->poolStart;
 
     logf("DMA ");
     printZoneInfo(zone_DMA);
