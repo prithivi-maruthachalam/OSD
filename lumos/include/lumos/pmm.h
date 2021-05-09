@@ -54,12 +54,12 @@ struct pool
 
 struct buddy
 {
-    uint8_t buddyOrder;
-    uint32_t blockCount;
-    uint32_t mapWordCount;
-    uint32_t freeBlocks;
-    uint32_t *bitMap;
-    struct buddy *nextBuddy;
+    uint8_t buddyOrder;      // the order of the buddy in powers of 2
+    uint32_t mapWordCount;   // number of 32-bit words in the bitmap - for iteration
+    uint32_t freeBlocks;     // number of free blocks(paint)
+    uint32_t maxFreeBlocks;  // max available allocations for this bitmap
+    uint32_t *bitMap;        // pointer to the bitmap for the current buddy
+    struct buddy *nextBuddy; // pointer to the next buddy
 
 } __attribute__((packed));
 

@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <stddef.h>
+#include <string.h>
 
 #define CEIL(x, y) ((int)x / y) + (x % y != 0) ? 1 : 0;
 #define getBitOffset(start, target, order) ((uint32_t)target - (uint32_t)start) / order
@@ -65,8 +66,6 @@ void init_pmm(multiboot_info_t *mbtStructure)
             continue;
         }
 
-        logf("Base: %x\tLength:%x\ttype:%d\n", section->base_low, section->length_low, section->type);
-
         /* Add the current section as a pool to the NORMAL zone or the DMA zone. Additions to the
         DMA zone can be partial or complete base on the 256KB max size and the 16MB address limit */
 
@@ -111,7 +110,6 @@ void init_pmm(multiboot_info_t *mbtStructure)
             zone_normal->freeMem += section->length_low;
             zone_normal->poolEnd = currentPool;
 
-            // TODO: Build a buddy map for the size of the current pool and add the size of the entire map to zonePhysicalSize
             makeBuddies(currentPool);
 
             zone_normal->zonePhysicalSize += currentPool->poolPhysicalSize;
@@ -147,7 +145,6 @@ void init_pmm(multiboot_info_t *mbtStructure)
                 zone_DMA->totalSize += section->length_low;
                 zone_DMA->freeMem += section->length_low;
 
-                // TODO: Build buddies for that and add the extra size to zonePhysocalSize
                 makeBuddies(currentPool);
                 zone_DMA->zonePhysicalSize += currentPool->poolPhysicalSize;
 
@@ -174,43 +171,19 @@ void init_pmm(multiboot_info_t *mbtStructure)
             section->base_low += currentPool->poolSize;   // Advance start of current section
             section->length_low -= currentPool->poolSize; // Reduce size of current section
 
-            // TODO: Build buddies for currentPool->poolSize and add the extra size to zonePhysicalSize
             makeBuddies(currentPool);
             zone_DMA->zonePhysicalSize += currentPool->poolPhysicalSize;
         }
     }
 
-    logf("\n\nDMA ");
-    printZoneInfo(zone_DMA);
-    logf("\nNormal");
-    printZoneInfo(zone_normal);
-
+    // reserve space for ther kernel
     uint32_t resSize = zone_DMA->zonePhysicalSize + zone_normal->zonePhysicalSize + kernel_end - kernel_start;
     uint32_t resStart = (uint32_t)kernel_start - VIRTUAL_KERNEL_OFFSET;
 
-    // setting kernel space + pmm structures as reserved
-    // logf("\nTrying to set the kernel space as reserved:\n");
-    // logf("%x bytes starting from %x and ending before %x\n", resSize, resStart, resStart + resSize);
-    // currentPool = zone_normal->poolStart;
-    // struct buddy *currentBuddy;
-    // while (currentPool)
-    // {
-    //     // pool contains the start of the section to be reserved
-    //     if ((currentPool->start <= resStart) && resStart < currentPool->start + currentPool->poolSize)
-    //         break;
-    //     currentPool = currentPool->nextPool;
-    // }
-    // currentBuddy = currentPool->poolBuddiesTop;
-    // for (uint32_t i = MAX_BLOCK_ORDER; i >= 1; i = i >> 1)
-    // {
-    //     int startBit = getBitOffset(currentPool->start, resStart, (BLOCK_SIZE * i));
-    //     int endBit = getBitOffset(currentPool->start, resStart + resSize - 1, (BLOCK_SIZE * i));
-    //     logf("StartBit: %x\tendBit: %x\n", startBit, endBit);
-    //     logf("Buddy Starts @ : %x\n", currentBuddy->bitMap);
-    //     set_bits(currentBuddy->bitMap, startBit, endBit);
-    //     logf("Set bits\n");
-    //     currentBuddy = currentBuddy->nextBuddy;
-    // }
+    logf("DMA ");
+    printZoneInfo(zone_DMA);
+    logf("Normal");
+    printZoneInfo(zone_normal);
 }
 
 // utils
@@ -221,7 +194,6 @@ void set_bit(uint32_t *mapStart, uint32_t offset)
 
 void set_bits(uint32_t *mapStart, uint32_t offsetStart, uint32_t offsetEnd)
 {
-    printf("ioioio : %x\n", mapStart);
     uint32_t i;
     // set bit by bit until we reach the start of a word
     for (i = offsetStart; i <= offsetEnd && i % 32 != 0; i++)
@@ -259,45 +231,36 @@ void unset_bits(uint32_t *mapStart, uint32_t offsetStart, uint32_t offsetEnd)
 
 void makeBuddies(struct pool *pool)
 {
-    uint8_t i;
     struct buddy *currentBuddy;
-    struct buddy *previousBuddy;
-    uint32_t baseBlockSize = 0;
-    uint32_t endBit;
+    struct buddy *previousBuddy = NULL;
 
-    logf("\nPool @ %x | Size : %x\n", pool, pool->poolSize);
-
-    // This will be multiplied with powers of two for the blockCounts
-    baseBlockSize = pool->poolSize / (BLOCK_SIZE * MAX_BLOCK_ORDER) + (pool->poolSize % (BLOCK_SIZE * MAX_BLOCK_ORDER) != 0);
-
-    for (i = 1; i <= MAX_BLOCK_ORDER; i = i << 1)
+    for (uint8_t i = MAX_BLOCK_ORDER; i > 0; i = i >> 1)
     {
-        // Initialize the first buddy - right after the end of the pool structure
-        currentBuddy = (struct buddy *)((uint32_t)pool + pool->poolPhysicalSize);
+        currentBuddy = (struct buddy *)((uint32_t)pool + pool->poolPhysicalSize); // put the current buddy right after the previous structures
+        currentBuddy->buddyOrder = i;                                             // buddy order in terms of powers of 2
+        currentBuddy->maxFreeBlocks = pool->poolSize / (BLOCK_SIZE * i);          // max possible allocations for this order
+        currentBuddy->freeBlocks = (previousBuddy == NULL) ? currentBuddy->maxFreeBlocks : currentBuddy->maxFreeBlocks - (previousBuddy->maxFreeBlocks * 2);
+        currentBuddy->mapWordCount = (currentBuddy->maxFreeBlocks / 32) + (currentBuddy->maxFreeBlocks % 32 != 0);
+        currentBuddy->bitMap = (uint32_t *)((uint32_t)pool + pool->poolPhysicalSize + sizeof(struct buddy));
+        currentBuddy->nextBuddy = NULL;
+        pool->poolPhysicalSize += sizeof(struct buddy) + (currentBuddy->mapWordCount * 4);
+
+        if (currentBuddy->maxFreeBlocks == currentBuddy->freeBlocks)
+        {
+            memset(currentBuddy->bitMap, 0, currentBuddy->mapWordCount * 4); // set entire region to 0
+        }
+        else
+        {
+            memset(currentBuddy->bitMap, 0xFF, currentBuddy->mapWordCount * 4); // set entire region to 1
+            if (currentBuddy->freeBlocks > 0)
+                unset_bit(currentBuddy->bitMap, (currentBuddy->maxFreeBlocks - currentBuddy->freeBlocks)); // set that one last directly usable block to 0
+        }
+
+        // linked list stuff
         if (pool->poolBuddiesTop == NULL)
             pool->poolBuddiesTop = currentBuddy;
         else
             previousBuddy->nextBuddy = currentBuddy;
-        currentBuddy->buddyOrder = MAX_BLOCK_ORDER / i;
-        currentBuddy->blockCount = baseBlockSize * i;
-        currentBuddy->mapWordCount = (currentBuddy->blockCount / 32 + (currentBuddy->blockCount % 32 != 0));
-        currentBuddy->bitMap = (uint32_t *)((uint32_t)pool + pool->poolPhysicalSize + sizeof(struct buddy));
-        pool->poolPhysicalSize += sizeof(struct buddy) + (currentBuddy->mapWordCount * 4); // add size of first bitmap and buddy structure to physicalSize
-
-        // Bit offsets calculation
-        endBit = (pool->poolSize / (BLOCK_SIZE * currentBuddy->buddyOrder)) - 1;
-        currentBuddy->freeBlocks = endBit + 1;
-        unset_bits(currentBuddy->bitMap, 0, endBit);
-        set_bits(currentBuddy->bitMap, endBit + 1, (currentBuddy->mapWordCount * 32) - 1);
-
-        logf("\n\tInitialised buddy @ %x :\n", currentBuddy);
-        logf("\t\tOrder: %d\n", currentBuddy->buddyOrder);
-        logf("\t\tBlockCount : %x\n", currentBuddy->blockCount);
-        logf("\t\tTakes up %x bytes\n", currentBuddy->mapWordCount * 4);
-        logf("\t\tBitMap @ %x\n", currentBuddy->bitMap);
-        logf("\t\tfreeBlocks: %d\n", currentBuddy->freeBlocks);
-        logf("\t\tStartBit: %d\tEndBit: %d\n", 0, endBit);
-
         previousBuddy = currentBuddy;
     }
 }
@@ -305,10 +268,10 @@ void makeBuddies(struct pool *pool)
 // debugging
 void printBuddy(uint32_t *map, uint32_t wordCount)
 {
+    if (wordCount > 50)
+        return;
     for (uint32_t i = 0; i < wordCount; i++)
-    {
         logf(" %x | ", map[i]);
-    }
     logf("\n");
 }
 
@@ -317,15 +280,28 @@ void printZoneInfo(struct zone *zone)
     logf("Zone info @ %x: \n", zone);
     logf("  totalSize: %x\n", zone->totalSize);
     logf("  freeMem: %x\n", zone->freeMem);
-    logf("  physicalSize: %x\n", zone->zonePhysicalSize);
+    logf("  physicalSize: %x\n\n", zone->zonePhysicalSize);
     struct pool *p = zone->poolStart;
+    struct buddy *b;
     while (p != NULL)
     {
-        logf(" Pool details: %x\n", p);
-        logf("\tPoolStart : %x", p->start);
-        logf("\tPoolSize : %x bytes", p->poolSize);
-        logf("\tfreeMem : %x bytes", p->freeMem);
+        logf("  Pool details: %x\n", p);
+        logf("\tPoolStart : %x\n", p->start);
+        logf("\tPoolSize : %x bytes\n", p->poolSize);
+        logf("\tfreeMem : %x bytes\n", p->freeMem);
+        b = p->poolBuddiesTop;
+        while (b != NULL)
+        {
+            logf("\tBuddy of order %d @ %x:\n", b->buddyOrder, b);
+            logf("\t\tMapWordCount : %d\n", b->mapWordCount);
+            logf("\t\tMaxFreeBlocks: %d\n", b->maxFreeBlocks);
+            logf("\t\tRealFreeBlocks: %d\n", b->freeBlocks);
+            logf("\t\t");
+            printBuddy(b->bitMap, b->mapWordCount);
+            logf("\n");
+            b = b->nextBuddy;
+        }
         p = p->nextPool;
-        logf("\n");
     }
+    logf("---------------------------------------------\n\n");
 }
