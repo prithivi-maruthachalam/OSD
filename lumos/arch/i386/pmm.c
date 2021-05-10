@@ -7,7 +7,7 @@
 #include <string.h>
 
 #define CEIL(x, y) ((int)x / y) + (x % y != 0) ? 1 : 0;
-#define getBitOffset(start, target, order) ((uint32_t)target - (uint32_t)start) / order
+#define getBitOffset(start, target, blockSize) ((uint32_t)target - (uint32_t)start) / blockSize
 #define VIRT(x) x + VIRTUAL_KERNEL_OFFSET
 
 uintptr_t kernel_end = (uintptr_t)&_kernel_end;
@@ -173,8 +173,48 @@ void init_pmm(multiboot_info_t *mbtStructure)
     // reserve space for ther kernel
     uint32_t resSize = zone_DMA->zonePhysicalSize + zone_normal->zonePhysicalSize + kernel_end - kernel_start;
     uint32_t resStart = (uint32_t)kernel_start - VIRTUAL_KERNEL_OFFSET;
+    printf("resStart: %x\tresEnd: %x\n", resStart, resStart + resSize - 1);
+    struct buddy *currentBuddy;
+    uint32_t startOffset, lastStart;
+    uint32_t endOffSet, lastEnd;
+    currentPool = zone_normal->poolStart;
+    while (currentPool != NULL)
+    {
+        if (currentPool->start <= resStart && resStart < (uint32_t)currentPool->start + currentPool->poolSize)
+        {
+            printf("Pool @ %x\tStart : %x\tSize:%x\n", currentPool, currentPool->start, currentPool->poolSize);
+            currentBuddy = currentPool->poolBuddiesTop;
+            while (currentBuddy != NULL)
+            {
+                printf("\nOrder: %d\tFreeBlocks: %x\tMaxFree: %x\n", currentBuddy->buddyOrder, currentBuddy->freeBlocks, currentBuddy->maxFreeBlocks);
 
-    // currentPool = zone_normal->poolStart;
+                startOffset = getBitOffset(currentPool->start, resStart, (currentBuddy->buddyOrder * BLOCK_SIZE));
+                endOffSet = getBitOffset(currentPool->start, (resStart + resSize - 1), (currentBuddy->buddyOrder * BLOCK_SIZE));
+
+                unset_bits(currentBuddy->bitMap, startOffset, endOffSet);
+
+                if (currentBuddy->buddyOrder < MAX_BLOCK_ORDER)
+                {
+                    printf("\tAdding %d to freeblocks\n", (startOffset - (2 * lastStart)) + ((lastEnd * 2) + 1 - endOffSet));
+                    currentBuddy->freeBlocks += (startOffset - (2 * lastStart)) + ((lastEnd * 2) + 1 - endOffSet);
+                    lastStart *= lastStart;
+                    lastEnd = (lastEnd * 2) + 1;
+                }
+                else
+                {
+                    lastStart = startOffset;
+                    lastEnd = endOffSet;
+                }
+
+                currentBuddy = currentBuddy->nextBuddy;
+
+                // debugging
+                printf("\tStart Block: %x\tEnd Block: %x\n", startOffset, endOffSet);
+            }
+            break;
+        }
+        currentPool = currentPool->nextPool;
+    }
 
     logf("DMA ");
     printZoneInfo(zone_DMA);
