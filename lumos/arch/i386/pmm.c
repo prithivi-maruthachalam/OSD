@@ -14,9 +14,12 @@ uintptr_t kernel_end = (uintptr_t)&_kernel_end;
 uintptr_t kernel_start = (uintptr_t)&_kernel_start;
 uintptr_t VIRTUAL_KERNEL_OFFSET = (uintptr_t)&VIRTUAL_KERNEL_OFFSET_LD;
 
-// TODO: Implement a serial port interface for logging -  osdev
-
-// head of the lnked list of zones
+/*
+    The available physical memory is divided into two
+    types of zones. DMA zone handles a mazimum of 256K 
+    of the available physical memory space, upto a max address
+    of 16M.
+*/
 struct zone *zone_DMA = (struct zone *)&_kernel_end;
 struct zone *zone_normal = NULL;
 
@@ -30,10 +33,11 @@ void set_bit(uint32_t *mapStart, uint32_t offset);                             /
 void set_bits(uint32_t *mapStart, uint32_t offsetStart, uint32_t offsetEnd);   // set a section of bits
 void unset_bit(uint32_t *mapStart, uint32_t offset);                           // unset a single bit
 void unset_bits(uint32_t *mapStart, uint32_t offsetStart, uint32_t offsetEnd); // unset a section of bits
-void reserve_kernel();
+void reserve_kernel();                                                         // Mark the space used by the kernel and the pmm structures as reserved
 
 void init_pmm(multiboot_info_t *mbtStructure)
 {
+    // temp pointers to work wit pools inside loops
     struct pool *currentPool;
     struct pool *previousPool = NULL;
 
@@ -51,7 +55,7 @@ void init_pmm(multiboot_info_t *mbtStructure)
     zone_DMA->poolStart = NULL;
     zone_DMA->zonePhysicalSize = sizeof(struct zone);
 
-    // traversing the memory map
+    // go through the memory map from the multiboot info structure
     struct mmap_entry_t *section = (struct mmap_entry_t *)(mbtStructure->mmap_addr + VIRTUAL_KERNEL_OFFSET);
     while (section < (struct mmap_entry_t *)(mbtStructure->mmap_addr + mbtStructure->mmap_length + VIRTUAL_KERNEL_OFFSET))
     {
@@ -61,18 +65,19 @@ void init_pmm(multiboot_info_t *mbtStructure)
         */
         if (section->base_high || section->type != 1)
         {
-
             section = (struct mmap_entry_t *)((uint32_t)section + (uint32_t)section->size + sizeof(section->size));
             continue;
         }
 
         /* Add the current section as a pool to the NORMAL zone or the DMA zone. Additions to the
-        DMA zone can be partial or complete base on the 256KB max size and the 16MB address limit */
+        DMA zone can be partial or complete based on the 256KB max size and the 16MB address limit */
 
-        // If DMA zone is done, add the entire section as a NORMAL zone pool
+        // If we're done with the DMA, add the entire section as a NORMAL zone pool
         if (section->base_low > DMA_MAX_ADDRESS || zone_DMA->totalSize >= DMA_TOTAL_SIZE)
         {
-            // check if this is the first time the normal zone is being considered
+            /*  If this is the first time the NORMAL zone is being considered, initialize the 
+                NORMAL zone descriptor
+             */
             if (zone_normal == NULL)
             {
                 zone_normal = (struct zone *)((uint32_t)zone_DMA + zone_DMA->zonePhysicalSize); // put the normal zone structure right after all the DMA zone - related data
@@ -83,7 +88,7 @@ void init_pmm(multiboot_info_t *mbtStructure)
                 zone_normal->zonePhysicalSize = sizeof(struct zone);
             }
 
-            // create a new pool and add it to the existing list of NORMAL pools
+            // Create a new pool and add it to the existing list of NORMAL pools
             currentPool = (struct pool *)((uint32_t)zone_normal + zone_normal->zonePhysicalSize);
             currentPool->start = section->base_low;
             currentPool->poolSize = section->length_low;
@@ -91,22 +96,21 @@ void init_pmm(multiboot_info_t *mbtStructure)
             currentPool->nextPool = NULL;
             currentPool->poolBuddiesTop = NULL;
             currentPool->poolPhysicalSize = sizeof(struct pool);
-            if (zone_normal->poolStart == NULL)
-            {
-                zone_normal->poolStart = currentPool; // this is the first NORMAL pool
-            }
-            else
-            {
-                previousPool->nextPool = currentPool;
-            }
 
-            zone_normal->totalSize += section->length_low;
             zone_normal->freeMem += section->length_low;
+            zone_normal->totalSize += section->length_low;
 
             makeBuddies(currentPool);
 
             zone_normal->zonePhysicalSize += currentPool->poolPhysicalSize;
+
+            if (zone_normal->poolStart == NULL)
+                zone_normal->poolStart = currentPool; // this is the first NORMAL pool
+            else
+                previousPool->nextPool = currentPool; // update link from previous pool
+
             previousPool = currentPool;
+
             section = (struct mmap_entry_t *)((uint32_t)section + (uint32_t)section->size + sizeof(section->size));
         }
         // else, we've not given up on DMA yet, add the current section as a DMA pool either entirely or partially
@@ -118,15 +122,11 @@ void init_pmm(multiboot_info_t *mbtStructure)
             currentPool->nextPool = NULL;
             currentPool->poolBuddiesTop = NULL;
             currentPool->poolPhysicalSize = sizeof(struct pool);
+
             if (zone_DMA->poolStart == NULL)
-            {
                 zone_DMA->poolStart = currentPool; // this is the first DMA pool
-            }
             else
-            {
-                // Add pool to the list
-                previousPool->nextPool = currentPool;
-            }
+                previousPool->nextPool = currentPool; // Add pool to the list
 
             // Make a decision on how much of the current section is to be added as DMA pool
             if (section->length_low < (DMA_TOTAL_SIZE - zone_DMA->totalSize) && (currentPool->start + section->length_low - 1) <= DMA_MAX_ADDRESS)
@@ -141,18 +141,18 @@ void init_pmm(multiboot_info_t *mbtStructure)
                 zone_DMA->zonePhysicalSize += currentPool->poolPhysicalSize;
 
                 previousPool = currentPool;
-                // move to next section
+
                 section = (struct mmap_entry_t *)((uint32_t)section + section->size + sizeof(section->size));
                 continue;
             }
             else if ((DMA_MAX_ADDRESS - currentPool->start + 1) < (DMA_TOTAL_SIZE - zone_DMA->totalSize))
             {
-                // adding a partial section for the 16MB condition
+                // adding a partial section because of the 16MB condition
                 currentPool->poolSize = DMA_MAX_ADDRESS - currentPool->start + 1;
             }
             else
             {
-                // adding a partial section for the 256KB condition
+                // adding a partial section because the 256KB condition
                 currentPool->poolSize = DMA_TOTAL_SIZE - zone_DMA->totalSize;
             }
 
@@ -171,7 +171,7 @@ void init_pmm(multiboot_info_t *mbtStructure)
         }
     }
 
-    /* Marking the space used by the kernel and the pmm structures as reserved-*/
+    // Mark kernel space and pmm space as reserved
     reserve_kernel();
 
     // logging pmm structures
@@ -181,12 +181,17 @@ void init_pmm(multiboot_info_t *mbtStructure)
     printZoneInfo(zone_normal);
 }
 
-// utils
+/* 
+    Mark the space used by the kernel and the pmm structures as reserved.
+    This creates some free blocks. Mark them and add the count of free 
+    blocks to their respective buddies.
+*/
 void reserve_kernel()
 {
     uint32_t resStart = (uint32_t)kernel_start - VIRTUAL_KERNEL_OFFSET;
     uint32_t resEnd = (uint32_t)kernel_end + zone_DMA->zonePhysicalSize + zone_normal->zonePhysicalSize - 1 - VIRTUAL_KERNEL_OFFSET;
     uint32_t startOffset = 0, eStart = 0, endOffSet = 0, eEnd = 0;
+
     struct buddy *currentBuddy;
     struct pool *currentPool;
     currentPool = zone_normal->poolStart;
@@ -194,15 +199,17 @@ void reserve_kernel()
     logf("Kernel start: %x\tKernel End: %x\n", resStart, resEnd);
     while (currentPool != NULL)
     {
+        // identify the pool that contains the kernel and pmm structures
         if (currentPool->start <= resStart && resStart < (uint32_t)currentPool->start + currentPool->poolSize)
         {
             logf("Pool @ %x\tStart : %x\tSize:%x\n", currentPool, currentPool->start, currentPool->poolSize);
 
-            // set bits for the highest order
+            // Reserve the coresponding blocks in the highest order buddy
             currentBuddy = currentPool->poolBuddiesTop;
             eStart = getBitOffset(currentPool->start, resStart, (currentBuddy->buddyOrder * BLOCK_SIZE));
             eEnd = getBitOffset(currentPool->start, resEnd, (currentBuddy->buddyOrder * BLOCK_SIZE));
-            set_bits(currentBuddy->bitMap, eStart, eEnd); // highest order - just set those bits
+            set_bits(currentBuddy->bitMap, eStart, eEnd);
+
             currentBuddy = currentBuddy->nextBuddy;
 
             while (currentBuddy != NULL)
