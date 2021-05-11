@@ -5,6 +5,7 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <string.h>
+#include <stdbool.h>
 
 #define CEIL(x, y) ((int)x / y) + (x % y != 0) ? 1 : 0;
 #define getBitOffset(start, target, blockSize) ((uint32_t)target - (uint32_t)start) / blockSize
@@ -33,8 +34,18 @@ void set_bit(uint32_t *mapStart, uint32_t offset);                             /
 void set_bits(uint32_t *mapStart, uint32_t offsetStart, uint32_t offsetEnd);   // set a section of bits
 void unset_bit(uint32_t *mapStart, uint32_t offset);                           // unset a single bit
 void unset_bits(uint32_t *mapStart, uint32_t offsetStart, uint32_t offsetEnd); // unset a section of bits
+bool test_bit(uint32_t *mapStart, uint32_t offset);                            // return the value of a bit
 void reserve_kernel();                                                         // Mark the space used by the kernel and the pmm structures as reserved
 
+/*
+    Initialising the Physical Memory Manager
+    ----------------------------------------
+    This involves going through the memory map provided GRUB. For each free region,
+    a decision is made to either add it to the linked list of NORMAL zone pools of memory or 
+    to the DMA pools. A section will be added only partially to the set of DMA pools if
+    adding the section increases the total size of the DMA zone above 256K or makes the addresses 
+    of the DMA zone above 16M. For each pool, it sets up the pool's buddies using the makeBuddies function.
+*/
 void init_pmm(multiboot_info_t *mbtStructure)
 {
     // temp pointers to work wit pools inside loops
@@ -171,6 +182,12 @@ void init_pmm(multiboot_info_t *mbtStructure)
         }
     }
 
+    // logging pmm structures
+    logf("DMA ");
+    printZoneInfo(zone_DMA);
+    logf("Normal");
+    printZoneInfo(zone_normal);
+
     // Mark kernel space and pmm space as reserved
     reserve_kernel();
 
@@ -192,6 +209,8 @@ void reserve_kernel()
     uint32_t resEnd = (uint32_t)kernel_end + zone_DMA->zonePhysicalSize + zone_normal->zonePhysicalSize - 1 - VIRTUAL_KERNEL_OFFSET;
     uint32_t startOffset = 0, eStart = 0, endOffSet = 0, eEnd = 0;
 
+    uint32_t i;
+
     struct buddy *currentBuddy;
     struct pool *currentPool;
     currentPool = zone_normal->poolStart;
@@ -209,6 +228,7 @@ void reserve_kernel()
             eStart = getBitOffset(currentPool->start, resStart, (currentBuddy->buddyOrder * BLOCK_SIZE));
             eEnd = getBitOffset(currentPool->start, resEnd, (currentBuddy->buddyOrder * BLOCK_SIZE));
             set_bits(currentBuddy->bitMap, eStart, eEnd);
+            currentBuddy->freeBlocks -= (eEnd - eStart + 1); // reduce the number of free blocks
 
             currentBuddy = currentBuddy->nextBuddy;
 
@@ -219,6 +239,21 @@ void reserve_kernel()
                 startOffset = getBitOffset(currentPool->start, resStart, (currentBuddy->buddyOrder * BLOCK_SIZE));
                 endOffSet = getBitOffset(currentPool->start, resEnd, (currentBuddy->buddyOrder * BLOCK_SIZE));
 
+                // If this overlaps a region that is already available, that region has to be reserved
+                for (i = startOffset; i <= endOffSet; i++)
+                {
+                    if (test_bit(currentBuddy->bitMap, i) == 0)
+                    {
+                        logf("\tBit %d was found to be prviously free. Reserving\n", i);
+                        currentBuddy->freeBlocks--;
+                    }
+                }
+
+                /* 
+                    When all the children of a parent arent being reserved,
+                    we get some free blocks in the beginning and in the end.
+                    Let's free them! #freealltheorphanedblocks
+                */
                 if (startOffset != (eStart * 2))
                 {
                     unset_bits(currentBuddy->bitMap, (eStart * 2), (startOffset - 1));
@@ -287,11 +322,22 @@ void unset_bits(uint32_t *mapStart, uint32_t offsetStart, uint32_t offsetEnd)
         unset_bit(mapStart, i);
 }
 
+bool test_bit(uint32_t *mapStart, uint32_t offset)
+{
+    return (mapStart[offset / 32] & (1 << (offset % 32)));
+}
+
+/*
+    Creates structures and initializes bitmaps for the buddies of a given pool.  
+    The blocks of the highest order are all set to available, while the lower 
+    order ones have all their blocks set to reserved (but the ones that do not 
+    belong to a larger parent block are set to available).
+*/
 void makeBuddies(struct pool *pool)
 {
     struct buddy *currentBuddy;
     struct buddy *previousBuddy = NULL;
-
+    printf("\n\n");
     for (uint8_t i = MAX_BLOCK_ORDER; i > 0; i = i >> 1)
     {
         currentBuddy = (struct buddy *)((uint32_t)pool + pool->poolPhysicalSize); // put the current buddy right after the previous structures
@@ -303,13 +349,16 @@ void makeBuddies(struct pool *pool)
         currentBuddy->nextBuddy = NULL;
         pool->poolPhysicalSize += sizeof(struct buddy) + (currentBuddy->mapWordCount * 4);
 
+        // if maxFreeBlocks is equal to the actual number of free blocks, this is the highest order buddy
         if (currentBuddy->maxFreeBlocks == currentBuddy->freeBlocks)
         {
-            memset(currentBuddy->bitMap, 0, currentBuddy->mapWordCount * 4); // set entire region to 0
+            memset(currentBuddy->bitMap, 0, currentBuddy->mapWordCount * 4); // set entire region to available
         }
+        // else, this is a lower order buddy - an extra block at the end might be available
         else
         {
-            memset(currentBuddy->bitMap, 0xFF, currentBuddy->mapWordCount * 4); // set entire region to 1
+            memset(currentBuddy->bitMap, 0xFF, currentBuddy->mapWordCount * 4); // set entire region to reserved
+            // check if a block at the end is actually available
             if (currentBuddy->freeBlocks > 0)
                 unset_bit(currentBuddy->bitMap, (currentBuddy->maxFreeBlocks - currentBuddy->freeBlocks)); // set that one last directly usable block to 0
         }
