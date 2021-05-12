@@ -227,6 +227,8 @@ void reserve_kernel()
             currentBuddy = currentPool->poolBuddiesTop;
             eStart = getBitOffset(currentPool->start, resStart, (currentBuddy->buddyOrder * BLOCK_SIZE));
             eEnd = getBitOffset(currentPool->start, resEnd, (currentBuddy->buddyOrder * BLOCK_SIZE));
+            logf("\nOrder: %d\tFreeBlocks: %x\tMaxFree: %x\n", currentBuddy->buddyOrder, currentBuddy->freeBlocks, currentBuddy->maxFreeBlocks);
+            logf("\tStart Block: %x\tEnd Block: %x\n", eStart, eEnd);
             set_bits(currentBuddy->bitMap, eStart, eEnd);
             currentBuddy->freeBlocks -= (eEnd - eStart + 1); // reduce the number of free blocks
 
@@ -234,10 +236,11 @@ void reserve_kernel()
 
             while (currentBuddy != NULL)
             {
-                logf("\nOrder: %d\tFreeBlocks: %x\tMaxFree: %x\n", currentBuddy->buddyOrder, currentBuddy->freeBlocks, currentBuddy->maxFreeBlocks);
-                logf("\tStart Block: %x\tEnd Block: %x\n", startOffset, endOffSet);
                 startOffset = getBitOffset(currentPool->start, resStart, (currentBuddy->buddyOrder * BLOCK_SIZE));
                 endOffSet = getBitOffset(currentPool->start, resEnd, (currentBuddy->buddyOrder * BLOCK_SIZE));
+
+                logf("\nOrder: %d\tFreeBlocks: %x\tMaxFree: %x\n", currentBuddy->buddyOrder, currentBuddy->freeBlocks, currentBuddy->maxFreeBlocks);
+                logf("\tStart Block: %x\tEnd Block: %x\n", startOffset, endOffSet);
 
                 // If this overlaps a region that is already available, that region has to be reserved
                 for (i = startOffset; i <= endOffSet; i++)
@@ -267,6 +270,8 @@ void reserve_kernel()
                     currentBuddy->freeBlocks += (eEnd * 2) - endOffSet + 1;
                     logf("\tUnsetting %d to %d and adding %d free blocks\n", endOffSet + 1, (eEnd * 2) + 1, (eEnd * 2) - endOffSet + 1);
                 }
+
+                logf("\tFree blocks: %d\n", currentBuddy->freeBlocks);
 
                 eStart *= 2;
                 eEnd = (eEnd * 2) + 1;
