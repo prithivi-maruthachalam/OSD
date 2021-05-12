@@ -26,7 +26,7 @@ struct zone *zone_normal = NULL;
 
 // debugging
 void printZoneInfo(struct zone *zone);
-void printBuddy(uint32_t *map, uint32_t mapWordCount);
+void printBuddyBitMap(uint32_t *map, uint32_t mapWordCount);
 
 // utils
 void makeBuddies(struct pool *pool);
@@ -36,6 +36,17 @@ void unset_bit(uint32_t *mapStart, uint32_t offset);                           /
 void unset_bits(uint32_t *mapStart, uint32_t offsetStart, uint32_t offsetEnd); // unset a section of bits
 bool test_bit(uint32_t *mapStart, uint32_t offset);                            // return the value of a bit
 void reserve_kernel();                                                         // Mark the space used by the kernel and the pmm structures as reserved
+
+/* -------------------- API FUNCTION DEFINITIONS ----------------------- */
+
+void *pmm_alloc(uint32_t size)
+{
+    // TODO: Write the function
+    // Round size upto the nearest power of two
+
+    // if the normal zone has available frames start there, else steal from DMA
+    // find the first pool that has available frames
+}
 
 /*
     Initialising the Physical Memory Manager
@@ -182,21 +193,17 @@ void init_pmm(multiboot_info_t *mbtStructure)
         }
     }
 
-    // logging pmm structures
-    logf("DMA ");
-    printZoneInfo(zone_DMA);
-    logf("Normal");
-    printZoneInfo(zone_normal);
-
     // Mark kernel space and pmm space as reserved
     reserve_kernel();
 
-    // logging pmm structures
+    // log pmm structures
     logf("DMA ");
     printZoneInfo(zone_DMA);
     logf("Normal");
     printZoneInfo(zone_normal);
 }
+
+/* -------------------- UTIL FUNCTION DEFINITIONS ----------------------- */
 
 /* 
     Mark the space used by the kernel and the pmm structures as reserved.
@@ -370,15 +377,22 @@ void makeBuddies(struct pool *pool)
 
         // linked list stuff
         if (pool->poolBuddiesTop == NULL)
+        {
             pool->poolBuddiesTop = currentBuddy;
+            currentBuddy->prevBuddy = NULL;
+        }
         else
+        {
             previousBuddy->nextBuddy = currentBuddy;
+            currentBuddy->prevBuddy = previousBuddy;
+        }
         previousBuddy = currentBuddy;
     }
+    pool->poolBuddiesBottom = currentBuddy;
 }
 
 // debugging
-void printBuddy(uint32_t *map, uint32_t wordCount)
+void printBuddyBitMap(uint32_t *map, uint32_t wordCount)
 {
     for (uint32_t i = 0; i < wordCount && i < 50; i++)
         logf(" %x | ", map[i]);
@@ -406,8 +420,9 @@ void printZoneInfo(struct zone *zone)
             logf("\t\tMapWordCount : %d\n", b->mapWordCount);
             logf("\t\tMaxFreeBlocks: %d\n", b->maxFreeBlocks);
             logf("\t\tRealFreeBlocks: %d\n", b->freeBlocks);
+            logf("\t\tPrevious Buddy is @: %x\n", (b->prevBuddy) ? b->prevBuddy : 0);
             logf("\t\tBitMap @ %x: ", b->bitMap);
-            printBuddy(b->bitMap, b->mapWordCount);
+            printBuddyBitMap(b->bitMap, b->mapWordCount);
             logf("\n");
             b = b->nextBuddy;
         }

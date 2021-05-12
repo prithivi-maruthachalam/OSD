@@ -47,18 +47,19 @@ struct pool
     uint32_t start; // starting address of the memory associated with this pool
     uint32_t poolPhysicalSize;
     struct buddy *poolBuddiesTop;
+    struct buddy *poolBuddiesBottom;
     struct pool *nextPool;
 } __attribute__((packed));
 
 struct buddy
 {
-    uint8_t buddyOrder;      // the order of the buddy in powers of 2
-    uint32_t mapWordCount;   // number of 32-bit words in the bitmap - for iteration
-    uint32_t freeBlocks;     // number of free blocks(paint)
-    uint32_t maxFreeBlocks;  // max available allocations for this bitmap
-    uint32_t *bitMap;        // pointer to the bitmap for the current buddy
-    struct buddy *nextBuddy; // pointer to the next buddy
-
+    uint8_t buddyOrder;     // the order of the buddy in powers of 2
+    uint32_t mapWordCount;  // number of 32-bit words in the bitmap - for iteration
+    uint32_t freeBlocks;    // number of free blocks(paint)
+    uint32_t maxFreeBlocks; // max available allocations for this bitmap
+    uint32_t *bitMap;       // pointer to the bitmap for the current buddy
+    struct buddy *nextBuddy;
+    struct buddy *prevBuddy;
 } __attribute__((packed));
 
 extern uint32_t _kernel_start;
