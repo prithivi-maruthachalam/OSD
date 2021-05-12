@@ -214,7 +214,7 @@ void reserve_kernel()
 {
     uint32_t resStart = (uint32_t)kernel_start - VIRTUAL_KERNEL_OFFSET;
     uint32_t resEnd = (uint32_t)kernel_end + zone_DMA->zonePhysicalSize + zone_normal->zonePhysicalSize - 1 - VIRTUAL_KERNEL_OFFSET;
-    uint32_t startOffset = 0, eStart = 0, endOffSet = 0, eEnd = 0;
+    uint32_t startOffset = 0, pStart = 0, endOffSet = 0, eEnd = 0;
 
     uint32_t i;
 
@@ -232,12 +232,12 @@ void reserve_kernel()
 
             // Reserve the coresponding blocks in the highest order buddy
             currentBuddy = currentPool->poolBuddiesTop;
-            eStart = getBitOffset(currentPool->start, resStart, (currentBuddy->buddyOrder * BLOCK_SIZE));
+            pStart = getBitOffset(currentPool->start, resStart, (currentBuddy->buddyOrder * BLOCK_SIZE));
             eEnd = getBitOffset(currentPool->start, resEnd, (currentBuddy->buddyOrder * BLOCK_SIZE));
             logf("\nOrder: %d\tFreeBlocks: %x\tMaxFree: %x\n", currentBuddy->buddyOrder, currentBuddy->freeBlocks, currentBuddy->maxFreeBlocks);
-            logf("\tStart Block: %x\tEnd Block: %x\n", eStart, eEnd);
-            set_bits(currentBuddy->bitMap, eStart, eEnd);
-            currentBuddy->freeBlocks -= (eEnd - eStart + 1); // reduce the number of free blocks
+            logf("\tStart Block: %x\tEnd Block: %x\n", pStart, eEnd);
+            set_bits(currentBuddy->bitMap, pStart, eEnd);
+            currentBuddy->freeBlocks -= (eEnd - pStart + 1); // reduce the number of free blocks
 
             currentBuddy = currentBuddy->nextBuddy;
 
@@ -248,6 +248,7 @@ void reserve_kernel()
 
                 logf("\nOrder: %d\tFreeBlocks: %x\tMaxFree: %x\n", currentBuddy->buddyOrder, currentBuddy->freeBlocks, currentBuddy->maxFreeBlocks);
                 logf("\tStart Block: %x\tEnd Block: %x\n", startOffset, endOffSet);
+                logf("\tpStart : %d\teEnd : %d\n", pStart, eEnd);
 
                 // If this overlaps a region that is already available, that region has to be reserved
                 for (i = startOffset; i <= endOffSet; i++)
@@ -264,11 +265,11 @@ void reserve_kernel()
                     we get some free blocks in the beginning and in the end.
                     Let's free them! #freealltheorphanedblocks
                 */
-                if (startOffset != (eStart * 2))
+                if (startOffset != (pStart * 2))
                 {
-                    unset_bits(currentBuddy->bitMap, (eStart * 2), (startOffset - 1));
-                    currentBuddy->freeBlocks += startOffset - (eStart * 2);
-                    logf("\tUnsetting %d to %d and adding %d free blocks\n", (eStart * 2), (startOffset - 1), startOffset - (eStart * 2));
+                    unset_bits(currentBuddy->bitMap, (pStart * 2), (startOffset - 1));
+                    currentBuddy->freeBlocks += startOffset - (pStart * 2);
+                    logf("\tUnsetting %d to %d and adding %d free blocks\n", (pStart * 2), (startOffset - 1), startOffset - (pStart * 2));
                 }
 
                 if (endOffSet != (eEnd * 2) + 1)
@@ -280,8 +281,9 @@ void reserve_kernel()
 
                 logf("\tFree blocks: %d\n", currentBuddy->freeBlocks);
 
-                eStart *= 2;
-                eEnd = (eEnd * 2) + 1;
+                pStart = startOffset;
+                eEnd = endOffSet;
+
                 currentBuddy = currentBuddy->nextBuddy;
             }
             break;
