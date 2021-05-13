@@ -6,6 +6,7 @@
 #include <stddef.h>
 #include <string.h>
 #include <stdbool.h>
+#include <utils.h>
 
 #define CEIL(x, y) ((int)x / y) + (x % y != 0) ? 1 : 0;
 #define getBitOffset(start, target, blockSize) ((uint32_t)target - (uint32_t)start) / blockSize
@@ -41,11 +42,19 @@ void reserve_kernel();                                                         /
 
 void *pmm_alloc(uint32_t size)
 {
-    // TODO: Write the function
-    // Round size upto the nearest power of two
+    if (size == 0)
+    {
+        return NULL;
+    }
+
+    printf("Size : %d\t", size);
+    size = ceilMultiple(size, BLOCK_SIZE);
+    printf("Size : %d\n", size);
 
     // if the normal zone has available frames start there, else steal from DMA
     // find the first pool that has available frames
+
+    return NULL;
 }
 
 /*
