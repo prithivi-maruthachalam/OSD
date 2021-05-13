@@ -16,7 +16,8 @@
 
 // DMA constants
 #define DMA_MAX_ADDRESS 0xFFFFFF // Highest possible DMA address
-#define DMA_TOTAL_SIZE 0x40000   // 256 KB in bytes - total memory we're giving DMA
+#define DMA_TOTAL_BYTES 0x40000  // 256KB in bytes
+#define DMA_TOTAL_BLOCKS 0x40    // 256 KB in blocks
 
 void init_pmm(multiboot_info_t *mbtStructure);
 
@@ -34,16 +35,14 @@ struct mmap_entry_t
 struct zone
 {
     uint8_t zoneType;
-    uint32_t totalSize;
-    uint32_t freeMem;
+    uint32_t freeBlocks;
     uint32_t zonePhysicalSize;
     struct pool *poolStart;
 } __attribute__((packed));
 
 struct pool
 {
-    uint32_t poolSize; // size of the memory associated with this pool
-    uint32_t freeMem;
+    uint32_t freeBlocks;
     uint32_t start; // starting address of the memory associated with this pool
     uint32_t poolPhysicalSize;
     struct buddy *poolBuddiesTop;
