@@ -17,7 +17,7 @@ uintptr_t VIRTUAL_KERNEL_OFFSET = (uintptr_t)&VIRTUAL_KERNEL_OFFSET_LD;
 
 /*
     The available physical memory is divided into two
-    types of zones. DMA zone handles a mazimum of 256K 
+    types of zones. DMA zone handles a maximum of 256K 
     of the available physical memory space, upto a max address
     of 16M.
 */
@@ -177,7 +177,6 @@ void init_pmm(multiboot_info_t *mbtStructure)
                 tempSize = DMA_TOTAL_BYTES - (zone_DMA->freeBlocks * BLOCK_SIZE); // the second temp size is supposed to have the DMA zone size
             }
 
-            currentPool->freeBlocks = currentPool->freeBlocks; // init free mem for this pool
             zone_DMA->freeBlocks += currentPool->freeBlocks;
 
             section->base_low += tempSize;   // Advance start of current section
@@ -197,6 +196,7 @@ void init_pmm(multiboot_info_t *mbtStructure)
     printZoneInfo(zone_normal);
 
     // Mark kernel space and pmm space as reserved
+    logf("Reserving kernel\n\n");
     reserve_kernel();
 
     // log pmm structures
@@ -289,6 +289,11 @@ void reserve_kernel()
 
                 currentBuddy = currentBuddy->nextBuddy;
             }
+
+            // update current pool blocks
+            currentPool->freeBlocks -= (eEnd - pStart + 1);
+            zone_normal->freeBlocks -= (eEnd - pStart + 1);
+
             break;
         }
         currentPool = currentPool->nextPool;
@@ -354,7 +359,6 @@ void makeBuddies(struct pool *pool)
 {
     struct buddy *currentBuddy;
     struct buddy *previousBuddy = NULL;
-    printf("\n\n");
     for (uint8_t i = MAX_BLOCK_ORDER; i > 0; i = i >> 1)
     {
         currentBuddy = (struct buddy *)((uint32_t)pool + pool->poolPhysicalSize); // put the current buddy right after the previous structures
@@ -407,7 +411,7 @@ void printBuddyBitMap(uint32_t *map, uint32_t wordCount)
 void printZoneInfo(struct zone *zone)
 {
     logf("Zone info @ %x: \n", zone);
-    logf("  free: %x blocks\n", zone->freeBlocks);
+    logf("  free: %d blocks\n", zone->freeBlocks);
     logf("  physicalSize: %x\n\n", zone->zonePhysicalSize);
     struct pool *p = zone->poolStart;
     struct buddy *b;
