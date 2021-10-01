@@ -11,4 +11,4 @@ menuentry "theOS" {
 }
 EOF
 
-grub-mkrescue -o theOS.iso isodir
+grub-mkrescue /usr/lib/grub/i386-pc -o theOS.iso isodir

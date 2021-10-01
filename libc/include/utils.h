@@ -3,6 +3,6 @@
 
 #include <stdint.h>
 
-uint32_t ceilMultiple(uint32_t, uint32_t);
+uint32_t ceilPowTwo(uint32_t);
 
 #endif

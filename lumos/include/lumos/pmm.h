@@ -20,6 +20,8 @@
 #define DMA_TOTAL_BLOCKS 0x40    // 256 KB in blocks
 
 void init_pmm(multiboot_info_t *mbtStructure);
+void *pmm_alloc(uint32_t request);
+void pmm_free(uintptr_t address, uint32_t size);
 
 struct mmap_entry_t
 {
@@ -64,9 +66,5 @@ struct buddy
 extern uint32_t _kernel_start;
 extern uint32_t _kernel_end;
 extern uint32_t VIRTUAL_KERNEL_OFFSET_LD;
-
-// Size in bytes
-void *pmm_alloc(uint32_t size);
-void pmm_free(uintptr_t address, uint32_t size);
 
 #endif
