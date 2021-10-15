@@ -102,7 +102,7 @@ unsigned char kbdus_shift[128] =
         0, /* All other keys are undefined */
 };
 
-void keyboard_handler(struct registers_state regs);
+// void keyboard_handler(struct registers_state regs);
 
 void keyboard_handler(struct registers_state regs)
 {

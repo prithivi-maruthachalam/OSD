@@ -120,7 +120,7 @@ void *pmm_alloc(uint32_t request)
 
                     if (offset >= maxBlocks)
                     {
-                        logf('Returning null because internal loop ran too long');
+                        logf("Returning null because internal loop ran too long");
                         return NULL;
                     }
 

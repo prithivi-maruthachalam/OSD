@@ -37,7 +37,6 @@ CFLAGS=-O2 -g -ffreestanding -Wall -Wextra
 LIBK_CFLAGS=$(CFLAGS) -D__is_libk -Iinclude
 
 
-
 .PHONY: install-headers install-libs clean object-install
 
 # basically just putting the headers into the sysroot include directory
