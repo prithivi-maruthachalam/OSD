@@ -23,7 +23,7 @@ export BOOT_DIR="/boot"
 export SYSROOT="$(pwd)/sysroot"
 export CC="$CC --sysroot=$SYSROOT"
 
-export PATH="$(pwd)/../cross/bin/:$PATH"
+export PATH="$(pwd)/../cross_src/cross/bin/:$PATH"
 
 if echo $TARGET_HOST | grep -Eq -- '-elf$'
 then
