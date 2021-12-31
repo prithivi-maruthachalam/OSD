@@ -18,6 +18,13 @@
 // debugging functions
 void printZone(struct pm_zone_t *zone);
 void printZones(struct pm_zone_t *zone);
+void printBitmap(uint32_t* mapstart, uint32_t mapWords);
+
+// internal functions
+void set_bit(uint32_t *mapStart, uint32_t offset);                             // set a single bit
+void set_bits(uint32_t *mapStart, uint32_t offsetStart, uint32_t offsetEnd);   // set a section of bits
+void unset_bit(uint32_t *mapStart, uint32_t offset);                           // unset a single bit
+void unset_bits(uint32_t *mapStart, uint32_t offsetStart, uint32_t offsetEnd); // unset a section of bits
 
 // linker 
 uintptr_t kernel_end = (uintptr_t)&_kernel_end;
@@ -27,7 +34,7 @@ uintptr_t VIRTUAL_KERNEL_OFFSET = (uintptr_t)&VIRTUAL_KERNEL_OFFSET_LD;
 // first memory zone
 struct pm_zone_t *memory_zones = (struct pm_zone_t *)&_kernel_end;
 struct pm_zone_t *current_zone = NULL;
-int bitmapSize;
+int bitmapWords;
 
 void init_pmm(multiboot_info_t *mbtStructure)
 {
@@ -57,18 +64,22 @@ void init_pmm(multiboot_info_t *mbtStructure)
         if(!current_zone){
             current_zone = (struct pm_zone_t *)&_kernel_end;
         } else {
-            current_zone->next_zone = (struct pm_zone_t *)((uint32_t)current_zone + sizeof(struct pm_zone_t) + current_zone->bitmapSize);
+            current_zone->next_zone = (struct pm_zone_t *)((uint32_t)current_zone + sizeof(struct pm_zone_t) + (current_zone->bitmapWords * 4));
             current_zone = current_zone->next_zone;
         }
 
         current_zone->start = section->base_low;                    // start address
         current_zone->length = section->length_low / BLOCK_SIZE;    // number of blocks
         current_zone->free = current_zone->length;                  // all blocks are free for now
-        current_zone->bitmapSize = CEIL(current_zone->length, 8);   // number of bytes in the bitmap
+        current_zone->bitmapWords = CEIL(current_zone->length, 32);   // number of bytes in the bitmap
+        current_zone->bitmap = (uint32_t *) ((uint32_t)current_zone + sizeof(struct pm_zone_t));
         current_zone->next_zone = NULL;
         
-        // todo: set the first length bits to 0
-        // todo: set the rest of the bits to 1
+        // todo: these functions are page faulting because current_zone->bitmap is not set to any address. Set it to the end of the structure
+
+        unset_bits(current_zone->bitmap, 0, current_zone->length - 1);
+        set_bits(current_zone->bitmap, current_zone->length, 159);
+
         // todo: if any of these pages are occupied by the kernel, set those bits to 1
 
         section = (struct mmap_entry_t *)((uint32_t)section + (uint32_t)section->size + sizeof(section->size));
@@ -78,6 +89,58 @@ void init_pmm(multiboot_info_t *mbtStructure)
     printZones(memory_zones);
 }
 
+/*
+    BITMAP FUNCTIONS
+
+    @param - uint32_t *mapStart : pointer to the start of the bitmap
+    @param - offset (or other variations of it) : offset from the start of the bitmap
+        representing a sepcific bit. Starting from 0. All these functions assume that 
+        the offsets are includive.
+*/
+void set_bit(uint32_t *mapStart, uint32_t offset)
+{
+    mapStart[offset / 32] |= 1 << (offset % 32);
+}
+
+void set_bits(uint32_t *mapStart, uint32_t offsetStart, uint32_t offsetEnd)
+{
+    logf("map: %x\tstart: %d\tend: %d\n", mapStart, offsetStart, offsetEnd);
+    uint32_t i;
+    // set bit by bit until we reach the start of a word
+    for (i = offsetStart; i <= offsetEnd && i % 32 != 0; i++)
+        set_bit(mapStart, i);
+
+    // set word by word, until a word would be too big for offsetEnd
+    for (; i + 32 <= offsetEnd; i = i + 32)
+        mapStart[i / 32] = 0xFFFFFFFF;
+
+    // set bit by bit until the end
+    for (; i <= offsetEnd; i++)
+        set_bit(mapStart, i);
+}
+
+void unset_bit(uint32_t *mapStart, uint32_t offset)
+{
+    mapStart[offset / 32] &= ~(1 << (offset % 32));
+}
+
+void unset_bits(uint32_t *mapStart, uint32_t offsetStart, uint32_t offsetEnd)
+{
+    uint32_t i;
+    // unset bit by bit until we reach the start of a word
+    for (i = offsetStart; i <= offsetEnd && i % 32 != 0; i++)
+        unset_bit(mapStart, i);
+
+    // set word by word, until a word would be too big for offsetEnd
+    for (; i + 32 <= offsetEnd; i = i + 32)
+        mapStart[i / 32] = 0;
+
+    // set bit by bit until the end
+    for (; i <= offsetEnd; i++)
+        unset_bit(mapStart, i);
+}
+
+
 // functions for debugging
 void printZone(struct pm_zone_t *zone)
 {
@@ -85,7 +148,17 @@ void printZone(struct pm_zone_t *zone)
     logf("zone start: %x\n", zone->start);
     logf("zone free: %d blocks\n", zone->free);
     logf("zone length: %d\n", zone->length);
-    logf("zone bitmap size: %d bytes\n", zone->bitmapSize);
+    logf("zone bitmap words: %d bytes\n", zone->bitmapWords);
+    logf("bitmap location: %x\n", zone->bitmap);
+    logf("bitmap contents : "); printBitmap(zone->bitmap, zone->bitmapWords);
+    logf("\n");
+    // todo: print bitmap
+}
+
+void printBitmap(uint32_t* mapstart, uint32_t mapWords){
+    for(uint32_t i = 0; i < mapWords; i++){
+        logf(" %x ", *(mapstart + i));
+    }
 }
 
 void printZones(struct pm_zone_t *zone){

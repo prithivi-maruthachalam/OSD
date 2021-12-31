@@ -29,7 +29,7 @@ struct pm_zone_t
     uint32_t start;
     uint32_t length;
     uint32_t free;
-    uint32_t bitmapSize;
+    uint32_t bitmapWords;
     uint32_t *bitmap;
     struct pm_zone_t *next_zone;
 } __attribute__((packed));
