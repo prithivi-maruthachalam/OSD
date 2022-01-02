@@ -22,8 +22,6 @@ void kernel_main(multiboot_info_t *mbt)
     printf("basic initializations complete. starting physical memory manager\n");
 
     init_pmm(mbt);
-
-    // pmm_alloc(0);
     // pmm_alloc(4095);
     // pmm_alloc(4096);
     // pmm_alloc(6000); 

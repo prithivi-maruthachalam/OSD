@@ -37,7 +37,7 @@ struct pm_zone_t
 
 // API Functions
 void init_pmm(multiboot_info_t *mbtStructure);  // initialize the physciall memory manager from the GRUB memory map
-
+void *pmm_alloc();
 
 #endif
 // #include <lumos/multiboot.h>
