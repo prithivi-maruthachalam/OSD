@@ -14,6 +14,9 @@
 #include <utils.h>
 
 #define CEIL(x, y) ((x / y) + ((x % y) != 0))
+#define MIN(x,y) (x < y) ? x : y;
+#define MAX(x,y) (x > y) ? x : y;
+#define GET_OFFSET(start, target, blockSize) ((uint32_t)target - (uint32_t)start) / blockSize
 
 // debugging functions
 void printZone(struct pm_zone_t *zone);
@@ -47,6 +50,8 @@ void init_pmm(multiboot_info_t *mbtStructure)
         abort();
     }
 
+    uint32_t pmm_structures_size = 0;
+
     // go through the memory map from the multiboot info structure
     struct mmap_entry_t *section = (struct mmap_entry_t *)(mbtStructure->mmap_addr + VIRTUAL_KERNEL_OFFSET);
     while (section < (struct mmap_entry_t *)(mbtStructure->mmap_addr + mbtStructure->mmap_length + VIRTUAL_KERNEL_OFFSET))
@@ -61,6 +66,7 @@ void init_pmm(multiboot_info_t *mbtStructure)
         // log memory map information
         logf("(*) base: %x\tlen: %x bytes\ttype: %d\n", section->base_low, section->length_low, section->type);
 
+        // linked list stuf
         if(!current_zone){
             current_zone = (struct pm_zone_t *)&_kernel_end;
         } else {
@@ -68,24 +74,63 @@ void init_pmm(multiboot_info_t *mbtStructure)
             current_zone = current_zone->next_zone;
         }
 
-        current_zone->start = section->base_low;                    // start address
+        current_zone->start = section->base_low;    // start address
         current_zone->length = section->length_low / BLOCK_SIZE;    // number of blocks
-        current_zone->free = current_zone->length;                  // all blocks are free for now
-        current_zone->bitmapWords = CEIL(current_zone->length, 32);   // number of bytes in the bitmap
+        current_zone->free = current_zone->length;  // all blocks are free for now
+        current_zone->bitmapWords = CEIL(current_zone->length, WORD);   // number of bytes in the bitmap
         current_zone->bitmap = (uint32_t *) ((uint32_t)current_zone + sizeof(struct pm_zone_t));
         current_zone->next_zone = NULL;
-        
-        // todo: these functions are page faulting because current_zone->bitmap is not set to any address. Set it to the end of the structure
 
+        // unset all the free page bits and set the bits that are used as padding         
         unset_bits(current_zone->bitmap, 0, current_zone->length - 1);
-        set_bits(current_zone->bitmap, current_zone->length, 159);
+        set_bits(current_zone->bitmap, current_zone->length, (current_zone->bitmapWords * 32) - 1);
 
-        // todo: if any of these pages are occupied by the kernel, set those bits to 1
+        pmm_structures_size += sizeof(struct pm_zone_t) + (current_zone->bitmapWords * 4);
 
         section = (struct mmap_entry_t *)((uint32_t)section + (uint32_t)section->size + sizeof(section->size));
     }
 
-    logf("\nPhysical Memory Manger Zones\n------------------------------------\n");
+    printZones(memory_zones);
+
+
+
+    logf("PMM strucutres take %d bytes\n", pmm_structures_size);
+    logf("\nReserving kernel blocks\n");
+    uint32_t resStart = (uint32_t)kernel_start - VIRTUAL_KERNEL_OFFSET;
+    uint32_t resEnd = (uint32_t)kernel_end - VIRTUAL_KERNEL_OFFSET - 1 + pmm_structures_size;
+    uint32_t zoneEnd;
+    uint32_t startbit;
+    uint32_t endbit;
+
+    logf("kernel start : %x\tkernel end: %x\n", resStart, resEnd);
+
+    // for each zone
+    current_zone = memory_zones;
+    while(current_zone){
+        // current zone end address
+        zoneEnd = (uint32_t)current_zone->start + (current_zone->length * BLOCK_SIZE) - 1;
+        logf("zone start: %x\tzone end: %x\n", current_zone->start, zoneEnd);
+
+        if((resStart <= current_zone->start && resEnd >= current_zone->start) || 
+            (resStart >= current_zone->start && resStart <= zoneEnd)){
+            
+            logf("kernel and zone overlap\n");
+
+            // reserve bits (offsets are inclusive)
+            startbit = MAX(current_zone->start, resStart);
+            endbit = MIN(zoneEnd, resEnd);
+            startbit = GET_OFFSET(current_zone->start, startbit, BLOCK_SIZE); 
+            endbit = GET_OFFSET(current_zone->start, endbit, BLOCK_SIZE);
+
+            logf("kstart bit: %d\tkend bit: %d\n", startbit, endbit);
+
+            set_bits(current_zone->bitmap, startbit, endbit);
+        }
+
+        logf("\n");
+        current_zone = current_zone->next_zone;
+    }
+
     printZones(memory_zones);
 }
 
@@ -99,20 +144,19 @@ void init_pmm(multiboot_info_t *mbtStructure)
 */
 void set_bit(uint32_t *mapStart, uint32_t offset)
 {
-    mapStart[offset / 32] |= 1 << (offset % 32);
+    mapStart[offset / WORD] |= 1 << (offset % WORD);
 }
 
 void set_bits(uint32_t *mapStart, uint32_t offsetStart, uint32_t offsetEnd)
 {
-    logf("map: %x\tstart: %d\tend: %d\n", mapStart, offsetStart, offsetEnd);
     uint32_t i;
     // set bit by bit until we reach the start of a word
-    for (i = offsetStart; i <= offsetEnd && i % 32 != 0; i++)
+    for (i = offsetStart; i <= offsetEnd && i % WORD != 0; i++)
         set_bit(mapStart, i);
 
     // set word by word, until a word would be too big for offsetEnd
-    for (; i + 32 <= offsetEnd; i = i + 32)
-        mapStart[i / 32] = 0xFFFFFFFF;
+    for (; i + WORD <= offsetEnd; i = i + WORD)
+        mapStart[i / WORD] = 0xFFFFFFFF;
 
     // set bit by bit until the end
     for (; i <= offsetEnd; i++)
@@ -121,19 +165,19 @@ void set_bits(uint32_t *mapStart, uint32_t offsetStart, uint32_t offsetEnd)
 
 void unset_bit(uint32_t *mapStart, uint32_t offset)
 {
-    mapStart[offset / 32] &= ~(1 << (offset % 32));
+    mapStart[offset / WORD] &= ~(1 << (offset % WORD));
 }
 
 void unset_bits(uint32_t *mapStart, uint32_t offsetStart, uint32_t offsetEnd)
 {
     uint32_t i;
     // unset bit by bit until we reach the start of a word
-    for (i = offsetStart; i <= offsetEnd && i % 32 != 0; i++)
+    for (i = offsetStart; i <= offsetEnd && i % WORD != 0; i++)
         unset_bit(mapStart, i);
 
     // set word by word, until a word would be too big for offsetEnd
-    for (; i + 32 <= offsetEnd; i = i + 32)
-        mapStart[i / 32] = 0;
+    for (; i + WORD <= offsetEnd; i = i + WORD)
+        mapStart[i / WORD] = 0;
 
     // set bit by bit until the end
     for (; i <= offsetEnd; i++)
@@ -148,7 +192,7 @@ void printZone(struct pm_zone_t *zone)
     logf("zone start: %x\n", zone->start);
     logf("zone free: %d blocks\n", zone->free);
     logf("zone length: %d\n", zone->length);
-    logf("zone bitmap words: %d bytes\n", zone->bitmapWords);
+    logf("zone bitmap words: %d words : %d bytes\n", zone->bitmapWords, zone->bitmapWords * 4);
     logf("bitmap location: %x\n", zone->bitmap);
     logf("bitmap contents : "); printBitmap(zone->bitmap, zone->bitmapWords);
     logf("\n");
@@ -156,17 +200,27 @@ void printZone(struct pm_zone_t *zone)
 }
 
 void printBitmap(uint32_t* mapstart, uint32_t mapWords){
-    for(uint32_t i = 0; i < mapWords; i++){
+    uint32_t i = 0;
+    for(; i < mapWords; i++){
         logf(" %x ", *(mapstart + i));
+
+        if(i >= 5){
+            logf("...");
+            break;
+        }
     }
 }
 
 void printZones(struct pm_zone_t *zone){
+    logf("\nPhysical Memory Manger Zones\n------------------------------------\n");
+
     while(zone){
         printZone(zone);
         logf("\n");
         zone = zone->next_zone;
     }
+
+    logf("------------------------------------\n");
 }
 
 

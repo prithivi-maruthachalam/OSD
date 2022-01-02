@@ -5,6 +5,7 @@
 #include <stdint.h>
 
 #define BLOCK_SIZE 4096   // 4 KB in bytes
+#define WORD 32
 
 // kernel location pointers - from the linker
 extern uint32_t _kernel_start;
