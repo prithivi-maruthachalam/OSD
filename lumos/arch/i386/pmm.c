@@ -175,6 +175,7 @@ void *pmm_alloc(){
     
     // set block to reserved
     set_bit(current_zone->bitmap, i);
+    current_zone->free--;
 
     return (void *) GET_ADDRESS(current_zone->start, i, BLOCK_SIZE);
 
