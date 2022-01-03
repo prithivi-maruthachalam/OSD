@@ -1,8 +1,3 @@
-/* 
-    BitMap based Physcial Memoru Manager. Uses a first fit allocator for 
-    Normal zone memory and a buddy allocator for DMA zone allocation
-*/
-
 #include <lumos/pmm.h>
 #include <lumos/multiboot.h>
 #include <stdio.h>
@@ -31,19 +26,19 @@ void unset_bit(uint32_t *mapStart, uint32_t offset);                           /
 void unset_bits(uint32_t *mapStart, uint32_t offsetStart, uint32_t offsetEnd); // unset a section of bits
 bool test_bit(uint32_t *mapStart, uint32_t offset);
 
-// linker 
+// kernel start and end from linker
 uintptr_t kernel_end = (uintptr_t)&_kernel_end;
 uintptr_t kernel_start = (uintptr_t)&_kernel_start;
 uintptr_t VIRTUAL_KERNEL_OFFSET = (uintptr_t)&VIRTUAL_KERNEL_OFFSET_LD;
 
 // pmm memory zone structures
 struct pm_zone_t *memory_zones = (struct pm_zone_t *)&_kernel_end;
-struct pm_zone_t *current_zone = NULL;
-uint32_t bitmapWords;
 
 void init_pmm(multiboot_info_t *mbtStructure)
 {
     logf("[pmm]: init_pmm()\n");
+
+    struct pm_zone_t *current_zone = NULL;
 
     // make sure we have a valid memory map - 6th bit of flags indicates whether the mmap_addr & mmp_length fields are valid
     if (!(mbtStructure->flags & MBT_FLAG_IS_MMAP))
@@ -78,6 +73,7 @@ void init_pmm(multiboot_info_t *mbtStructure)
 
         current_zone->start = section->base_low;    // start address
         current_zone->end = current_zone->start + section->length_low - 1;
+        current_zone->lastOffset = 0;
         current_zone->length = section->length_low / BLOCK_SIZE;    // number of blocks
         current_zone->free = current_zone->length;  // all blocks are free for now
         current_zone->bitmapWords = CEIL(current_zone->length, WORD);   // number of bytes in the bitmap
@@ -135,7 +131,7 @@ void init_pmm(multiboot_info_t *mbtStructure)
 }
 
 // todo: store the last allocated offset in each zone. maybe start searching from there?
-void *pmm_alloc(){
+void *pmm_alloc2(){
     logf("\n[pmm_alloc] : trying to allocate 1 block\n");
 
     // find the first zone with free blocks
@@ -152,6 +148,53 @@ void *pmm_alloc(){
 
     // find first word which has atleast one unset bit
     uint32_t i = 0;
+    while (current_zone->bitmap[i / WORD] == 0xFFFFFFFF && i < current_zone->length)
+        i += WORD;
+
+    // this should never really happen
+    if(i >= current_zone->length){
+        logf("no free words in zone\n");
+        return NULL;
+    }
+
+    logf("searching in word %d\n", i);
+
+    // find first unset bit in word
+    uint32_t end = i + 32;
+    while (i < end && test_bit(current_zone->bitmap, i) != 0)
+        i++;
+    
+    // this shouldn't happen either
+    if(i >= end){
+        logf("no free blocks in word\n");
+        return NULL;
+    }
+
+    logf("returning block at %d\n", i);
+
+    set_bit(current_zone->bitmap, i);   // set block to used
+    current_zone->free--;               // reduce number of free blocks in zone
+
+    return (void *) GET_ADDRESS(current_zone->start, i, BLOCK_SIZE);
+}
+
+void *pmm_alloc(){
+    logf("\n[pmm_alloc] : trying to allocate 1 block\n");
+
+    // find the first zone with free blocks
+    struct pm_zone_t *current_zone = memory_zones;
+    while (current_zone && current_zone->free == 0)
+        current_zone = current_zone->next_zone;
+        
+    if(!current_zone){
+        logf("no free zones\n");
+        return NULL;
+    }
+
+    logf("searching in zone starting at %x\n", current_zone->start);
+
+    // find first word which has atleast one unset bit
+    uint32_t i = current_zone->lastOffset;
     while (current_zone->bitmap[i / WORD] == 0xFFFFFFFF && i < current_zone->length)
         i += WORD;
 

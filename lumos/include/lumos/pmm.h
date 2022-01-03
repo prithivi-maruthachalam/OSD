@@ -31,6 +31,7 @@ struct pm_zone_t
     uint32_t end;
     uint32_t length;
     uint32_t free;
+    uint32_t lastOffset;
     uint32_t bitmapWords;
     uint32_t *bitmap;
     struct pm_zone_t *next_zone;
