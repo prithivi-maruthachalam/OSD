@@ -77,6 +77,7 @@ void init_pmm(multiboot_info_t *mbtStructure)
         }
 
         current_zone->start = section->base_low;    // start address
+        current_zone->end = current_zone->start + section->length_low - 1;
         current_zone->length = section->length_low / BLOCK_SIZE;    // number of blocks
         current_zone->free = current_zone->length;  // all blocks are free for now
         current_zone->bitmapWords = CEIL(current_zone->length, WORD);   // number of bytes in the bitmap
@@ -87,35 +88,37 @@ void init_pmm(multiboot_info_t *mbtStructure)
         unset_bits(current_zone->bitmap, 0, current_zone->length - 1);
         set_bits(current_zone->bitmap, current_zone->length, (current_zone->bitmapWords * 32) - 1);
 
+        // set the block at address 0 to used : NULL thing
+        if(current_zone->start == 0)
+            set_bit(current_zone->bitmap, 0);
+
         pmm_structures_size += sizeof(struct pm_zone_t) + (current_zone->bitmapWords * 4);
 
         section = (struct mmap_entry_t *)((uint32_t)section + (uint32_t)section->size + sizeof(section->size));
     }
 
-    /* RESERVING KERNEL PAGES */
+    /* RESERVING KERNEL BLOCKS */
     logf("PMM strucutres take %d bytes\n", pmm_structures_size);
     logf("\nReserving kernel blocks\n");
     uint32_t resStart = (uint32_t)kernel_start - VIRTUAL_KERNEL_OFFSET;
     uint32_t resEnd = (uint32_t)kernel_end - VIRTUAL_KERNEL_OFFSET - 1 + pmm_structures_size;
-    uint32_t zoneEnd, startbit, endbit;
+    uint32_t startbit, endbit;
 
     logf("kernel start : %x\tkernel end: %x\n", resStart, resEnd);
 
     // for each zone
     current_zone = memory_zones;
     while(current_zone){
-        // current zone end address
-        zoneEnd = (uint32_t)current_zone->start + (current_zone->length * BLOCK_SIZE) - 1;
-        logf("zone start: %x\tzone end: %x\n", current_zone->start, zoneEnd);
+        logf("zone start: %x\tzone end: %x\n", current_zone->start, current_zone->end);
 
         if((resStart <= current_zone->start && resEnd >= current_zone->start) || 
-            (resStart >= current_zone->start && resStart <= zoneEnd)){
+            (resStart >= current_zone->start && resStart <= current_zone->end)){
             
             logf("kernel and zone overlap\n");
 
             // get bit offsets (offsets are inclusive)
             startbit = MAX(current_zone->start, resStart);
-            endbit = MIN(zoneEnd, resEnd);
+            endbit = MIN(current_zone->end, resEnd);
             startbit = GET_OFFSET(current_zone->start, startbit, BLOCK_SIZE); 
             endbit = GET_OFFSET(current_zone->start, endbit, BLOCK_SIZE);
 
@@ -133,56 +136,72 @@ void init_pmm(multiboot_info_t *mbtStructure)
 
 // todo: store the last allocated offset in each zone. maybe start searching from there?
 void *pmm_alloc(){
-    logf("trying to allocate 1 block\n");
+    logf("\n[pmm_alloc] : trying to allocate 1 block\n");
 
     // find the first zone with free blocks
-    current_zone = memory_zones;
-    uint8_t found = 0;
-    while (current_zone)
-    {
-        if(current_zone->free != 0){
-            found = 1;
-            break;
-        }
-
+    struct pm_zone_t *current_zone = memory_zones;
+    while (current_zone && current_zone->free == 0)
         current_zone = current_zone->next_zone;
-    }
-    
-    if(!found){
+        
+    if(!current_zone){
         logf("no free zones\n");
         return NULL;
     }
 
-    uint32_t i = 0;
-    while (current_zone->bitmap[i / WORD] == 0xFFFFFFFF && i < current_zone->length){
-        i += WORD;
-    }
+    logf("searching in zone starting at %x\n", current_zone->start);
 
+    // find first word which has atleast one unset bit
+    uint32_t i = 0;
+    while (current_zone->bitmap[i / WORD] == 0xFFFFFFFF && i < current_zone->length)
+        i += WORD;
+
+    // this should never really happen
     if(i >= current_zone->length){
         logf("no free words in zone\n");
         return NULL;
     }
 
     logf("searching in word %d\n", i);
+
+    // find first unset bit in word
     uint32_t end = i + 32;
-    while (i < end)
-    {
-        if(test_bit(current_zone->bitmap, i) == 0){
-            break;
-        }
+    while (i < end && test_bit(current_zone->bitmap, i) != 0)
         i++;
-    }
     
-    // set block to reserved
-    set_bit(current_zone->bitmap, i);
-    current_zone->free--;
+    // this shouldn't happen either
+    if(i >= end){
+        logf("no free blocks in word\n");
+        return NULL;
+    }
+
+    logf("returning block at %d\n", i);
+
+    set_bit(current_zone->bitmap, i);   // set block to used
+    current_zone->free--;               // reduce number of free blocks in zone
 
     return (void *) GET_ADDRESS(current_zone->start, i, BLOCK_SIZE);
+}
 
-    // go through bit map
-    // 
+void pmm_free(void *addr){
+    logf("\n[pmm_alloc] : trying to free 1 block at %x (%d)\n", addr, addr);
 
-    return NULL;
+    // find the zone this address belongs to
+    struct pm_zone_t *current_zone = memory_zones;
+    while (current_zone && current_zone->start > (uintptr_t)addr && (uintptr_t)addr > current_zone->end)
+        current_zone = current_zone->next_zone;
+    
+    if(!current_zone){
+        logf("couldn't find address in a zone");
+        return;
+    }
+
+    logf("found address in zone starting at %x\n", current_zone->start);
+
+    uint32_t offset = GET_OFFSET(current_zone->start, addr, BLOCK_SIZE);
+    logf("address offset : %d\n", offset);
+
+    unset_bit(current_zone->bitmap, offset);  // set block to free
+    current_zone->free++;                   // increment number of free blocks in zone
 }
 
 /*
@@ -245,6 +264,7 @@ void printZone(struct pm_zone_t *zone)
 {
     logf("Zone info @ %x: \n", zone);
     logf("zone start: %x\n", zone->start);
+    logf("zone end: %x\n", zone->end);
     logf("zone free: %d blocks\n", zone->free);
     logf("zone length: %d\n", zone->length);
     logf("zone bitmap words: %d words : %d bytes\n", zone->bitmapWords, zone->bitmapWords * 4);
