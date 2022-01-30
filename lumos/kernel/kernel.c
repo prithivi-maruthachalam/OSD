@@ -26,12 +26,8 @@ void kernel_main(multiboot_info_t *mbt)
     char *u = (char *)pmm_alloc();
 
     pmm_free(t);
-    pmm_free(u);
 
-    pmm_alloc();
-    // pmm_alloc(4095);
-    // pmm_alloc(4096);
-    // pmm_alloc(6000); 
+    *u = 'c';
 
     for (;;)
         ;
