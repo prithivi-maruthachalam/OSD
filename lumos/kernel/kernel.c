@@ -5,6 +5,7 @@
 #include <lumos/keyboard.h>
 #include <lumos/multiboot.h>
 #include <lumos/pmm.h>
+#include <lumos/vmm.h>
 #include <lumos/com.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -20,14 +21,11 @@ void kernel_main(multiboot_info_t *mbt)
     init_com1();
 
     printf("basic initializations complete. starting physical memory manager\n");
-
     init_pmm(mbt);
-    char *t = (char *)pmm_alloc();
-    char *u = (char *)pmm_alloc();
 
-    pmm_free(t);
+    printf("starting virtual memory manager");
+    init_vmm();
 
-    *u = 'c';
 
     for (;;)
         ;
