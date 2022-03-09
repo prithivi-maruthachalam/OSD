@@ -18,6 +18,8 @@ enum PTE_FLAGS {
    	I86_PTE_FRAME			=	0x7FFFF000 	//1111111111111111111000000000000
 };
 
+#define I86_PTE_FRAME_OFFSET 12
+
 // page table entry data type
 typedef uint32_t pte_t;
 
@@ -42,7 +44,7 @@ static inline bool pte_is_writable(pte_t entry){
 }
 
 static inline uint32_t pte_get_frame_addr(pte_t entry){
-    return (uint32_t) (entry & I86_PTE_FRAME) >> 12;
+    return (uint32_t) (entry & I86_PTE_FRAME) >> I86_PTE_FRAME_OFFSET;
 }
 
 #endif

@@ -18,6 +18,8 @@ enum PDE_FLAGS {
    	I86_PDE_FRAME			=	0x7FFFF000 	//1111111111111111111000000000000
 };
 
+#define I86_PDE_FRAME_OFFSET 12
+
 // page directory entry data type
 typedef uint32_t pde_t;
 
@@ -50,7 +52,7 @@ static inline bool pde_is_writable (pde_t entry){
 }
 
 static inline uint32_t pde_get_addr(pde_t entry){
-    return (uint32_t) (entry & I86_PDE_FRAME) >> 12;
+    return (uint32_t) (entry & I86_PDE_FRAME) >> I86_PDE_FRAME_OFFSET;
 }
 
 
