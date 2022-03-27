@@ -2,6 +2,8 @@
 #define VMM_H
 
 #include<stdint.h>
+#include "pte.h"
+#include "pde.h"
 
 #define INDEX_PAGE_DIR(x) (((x) >> 22) & 0x3FF)
 #define INDEX_PAGE_TABLE(x) (((x) >> 12) & 0x3FF)
@@ -27,18 +29,14 @@ typedef struct page_dir {
 /* API FUNCTIONS */
 void init_vmm();
 
-/* get pointer to page table entry from virtual address */
-static inline pte_t* vmm_ptable_lookup_entry(page_table_t *table, virtual_addr_t addr){
-    if(table){
-        return &(table->entries[INDEX_PAGE_TABLE(addr)]);
-    }
+static inline uint32_t read_cr3(){
+    uint32_t value;
+    asm volatile("mov rax, cr3" : "=a"(value));
+    return value;
 }
 
-/* get pointer to page dir entry from virtual address */
-static inline pde_t* vmm_pdir_lookup_entry(page_dir_t *dir, virtual_addr_t addr){
-    if(dir){
-        return &(dir->entries[INDEX_PAGE_DIR(addr)]);
-    }
+static inline void write_cr3(uint32_t value){
+    asm volatile("mov cr3, rax" : : "a"(value));
 }
 
 #endif

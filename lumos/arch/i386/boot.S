@@ -34,10 +34,12 @@ stack_top: # guess, stupid
 
 # allocate space for paging structure
 .section .bss, "aw", @nobits
+#.extern boot_page_directory
+#.extern boot_page_table1
     .align 4096
 boot_page_directory:
     .skip 4096
-boot_page_table1:
+boot_page_table1:   # table 768 (b1100000000)
     .skip 4096
 
 # The actual kernel entry
@@ -49,7 +51,7 @@ _start:
     # making 1024 page table entries for the kernel
     movl $(boot_page_table1 - VIRTUAL_KERNEL_OFFSET), %edi    # page table entry address
     movl $0, %esi       # physical memeory
-    movl $1023, %ecx    # loop instruction handeles this by itself
+    movl $1023, %ecx    # loop instruction handles this by itself
     
 1:
     movl %esi, %edx
