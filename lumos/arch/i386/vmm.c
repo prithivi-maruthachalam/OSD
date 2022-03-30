@@ -6,20 +6,38 @@
 #include <string.h>
 #include <lumos/pmm.h>
 
-page_dir_t *_cur_directory = NULL;
+page_dir_t *_cur_directory = (page_dir_t*)0xFFFFF000;
 
 void init_vmm(){
     // allocate default page table for identity mapping
     // allocate default page table for higher half mapping
     logf("starting virtual memory manager\n");
 
-    page_table_t* table_id = (page_table_t*) 0xC0126D35;
+    page_table_t* table_id = (page_table_t*) pmm_alloc();
     if(!table_id){
         return;
     }    
     logf("putting first table at %x\n", table_id);
     
-    memset((void *)table_id, 0, 4096);
+    // page_table_t* table_hi = (page_table_t*) pmm_alloc();
+    // if(!table_hi){
+    //     return;
+    // }
+    // logf("putting second table at %x\n", table_id);
+
+    logf("reading current directory : %x\n", _cur_directory->entries[1023]);
+
+    // get the 768th table
+    /* todo: use the cur_dir to map the address of the 
+    two new tables into memory and and address of the new 
+    page directory */
+
+    /* todo: populate the new tables and the new directory 
+    and switch to it. */
+
+    /* note: the new page dir should be recursively mapped.  */
+
+    // memset((void *)table_id, 0, 4096);
 }
 
 

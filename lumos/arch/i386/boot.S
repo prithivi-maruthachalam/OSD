@@ -63,10 +63,12 @@ _start:
     loop 1b             # this also decerments ecx
 
 3: # map video memory
-    movl $(0x000B8000 | 0x003), boot_page_table1 - VIRTUAL_KERNEL_OFFSET + (1023 * 4)
+    movl $(0x000B8000 | 0x003), boot_page_table1 - VIRTUAL_KERNEL_OFFSET + (1023 * 4)   # putting vram in 1023rd entry
 
-    movl $(boot_page_table1 + 0x003 - VIRTUAL_KERNEL_OFFSET), boot_page_directory - VIRTUAL_KERNEL_OFFSET
-    movl $(boot_page_table1 + 0x003 - VIRTUAL_KERNEL_OFFSET), boot_page_directory - VIRTUAL_KERNEL_OFFSET + (768 * 4)
+    movl $(boot_page_table1 + 0x003 - VIRTUAL_KERNEL_OFFSET), boot_page_directory - VIRTUAL_KERNEL_OFFSET                   # identity mapping
+    movl $(boot_page_table1 + 0x003 - VIRTUAL_KERNEL_OFFSET), boot_page_directory - VIRTUAL_KERNEL_OFFSET + (768 * 4)       # higher-half mapping
+
+    movl $(boot_page_directory + 0x003 - VIRTUAL_KERNEL_OFFSET), boot_page_directory - VIRTUAL_KERNEL_OFFSET + (1023 * 4)
 
     # set the control registers
     # set cr3 to address of boot_page_directory
@@ -86,6 +88,7 @@ _start:
 
 .section .text
 4:
+    # remove identity pagin
     movl $0, boot_page_directory + 0
     
     # TODO: invlpg isn't supported by i386. Write a kernel routine

@@ -19,6 +19,7 @@ folder */
 #define VGA_WIDTH 80
 static uint16_t *const VGA_MEMORY = (uint16_t *)0xC03FF000;
 
+
 static size_t tty_row;
 static size_t tty_column;
 static uint8_t tty_color;
