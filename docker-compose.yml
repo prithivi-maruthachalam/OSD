@@ -4,7 +4,7 @@ x-constants:
   LUMOS_SOURCE_DIR: &LUMOS_SOURCE_DIR /lumos_source
 
 services:
-  photon_base:
+  photon-base:
     build:
       context: .
       dockerfile: build.Dockerfile
@@ -17,6 +17,6 @@ services:
     working_dir: *LUMOS_SOURCE_DIR
     command:  ["tail", "-f", "/dev/null"]
 
-  photon_build:
-    extends: photon_base
+  photon-builder:
+    extends: photon-base
     command: ["/bin/bash", "iso.sh"]

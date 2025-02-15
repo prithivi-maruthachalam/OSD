@@ -1,7 +1,7 @@
 #!/bin/sh
 
-# set -e
-. ./config.sh
+set -e
+. ./bin/config.sh
 
 for FOLDER in $MAJOR_FOLDERS
 do

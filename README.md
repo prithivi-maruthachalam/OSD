@@ -1,9 +1,18 @@
 # LumOS
 A work in progress kernel (maybe more someday) for the i386 arch.
-## Building and running on qemu
-- Ensure you have `qemu` and `docker` installed. The scripts should take care of the rest.
-- To build an iso file, run `docker-compose up photon_build`, which should write the iso to the _theOS.iso_ file in the root directory.
-- You can also use the `clean.sh` script to clean up any artifacts from a build.
+
+## Setup
+### Requirements
+Make sure you have the following tools installed
+- qemu
+- docker
+### Building
+- Running `docker-compose up photon-builder` should build the kernel and write it as a bootable image to _theOS.iso_ in the root directory.
+### Running
+- If the iso is available, you can simply run `bin/qemu.sh` to run the kernel on qemu
+### Cleanup
+- Run the `bin/clean.sh` script to remove all artifacts from a build.
+
 ## DIR structure
 ```
 .  
