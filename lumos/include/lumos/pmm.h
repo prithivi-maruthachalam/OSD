@@ -12,6 +12,8 @@ extern uint32_t _kernel_start;
 extern uint32_t _kernel_end;
 extern uint32_t VIRTUAL_KERNEL_OFFSET_LD;
 
+typedef uint32_t physical_addr_t;
+
 // GRUB Multiboot info
 #define MBT_FLAG_IS_MMAP 0x40   // 6th bit of flags in the mbt
 struct mmap_entry_t             // GRUB memory map entry structure

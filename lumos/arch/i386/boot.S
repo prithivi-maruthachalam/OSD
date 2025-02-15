@@ -34,10 +34,12 @@ stack_top: # guess, stupid
 
 # allocate space for paging structure
 .section .bss, "aw", @nobits
+#.extern boot_page_directory
+#.extern boot_page_table1
     .align 4096
 boot_page_directory:
     .skip 4096
-boot_page_table1:
+boot_page_table1:   # table 768 (b1100000000)
     .skip 4096
 
 # The actual kernel entry
@@ -49,7 +51,7 @@ _start:
     # making 1024 page table entries for the kernel
     movl $(boot_page_table1 - VIRTUAL_KERNEL_OFFSET), %edi    # page table entry address
     movl $0, %esi       # physical memeory
-    movl $1023, %ecx    # loop instruction handeles this by itself
+    movl $1023, %ecx    # loop instruction handles this by itself
     
 1:
     movl %esi, %edx
@@ -61,10 +63,12 @@ _start:
     loop 1b             # this also decerments ecx
 
 3: # map video memory
-    movl $(0x000B8000 | 0x003), boot_page_table1 - VIRTUAL_KERNEL_OFFSET + (1023 * 4)
+    movl $(0x000B8000 | 0x003), boot_page_table1 - VIRTUAL_KERNEL_OFFSET + (1023 * 4)   # putting vram in 1023rd entry
 
-    movl $(boot_page_table1 + 0x003 - VIRTUAL_KERNEL_OFFSET), boot_page_directory - VIRTUAL_KERNEL_OFFSET
-    movl $(boot_page_table1 + 0x003 - VIRTUAL_KERNEL_OFFSET), boot_page_directory - VIRTUAL_KERNEL_OFFSET + (768 * 4)
+    movl $(boot_page_table1 + 0x003 - VIRTUAL_KERNEL_OFFSET), boot_page_directory - VIRTUAL_KERNEL_OFFSET                   # identity mapping
+    movl $(boot_page_table1 + 0x003 - VIRTUAL_KERNEL_OFFSET), boot_page_directory - VIRTUAL_KERNEL_OFFSET + (768 * 4)       # higher-half mapping
+
+    movl $(boot_page_directory + 0x003 - VIRTUAL_KERNEL_OFFSET), boot_page_directory - VIRTUAL_KERNEL_OFFSET + (1023 * 4)
 
     # set the control registers
     # set cr3 to address of boot_page_directory
@@ -84,6 +88,7 @@ _start:
 
 .section .text
 4:
+    # remove identity pagin
     movl $0, boot_page_directory + 0
     
     # TODO: invlpg isn't supported by i386. Write a kernel routine
