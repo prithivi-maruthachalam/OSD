@@ -19,4 +19,4 @@ services:
 
   photon-builder:
     extends: photon-base
-    command: ["/bin/bash", "iso.sh"]
+    command: ["/bin/bash", "bin/iso.sh"]
