@@ -6,7 +6,7 @@ MAJOR_FOLDERS="libc lumos"
 
 # for the host prefix
 export TARGET_HOST="i686-elf"
-export TARGET_ARCH=$(./target-to-arch.sh ${TARGET_HOST})
+export TARGET_ARCH=$(./bin/target-to-arch.sh ${TARGET_HOST})
 
 # binutils
 export AR="$TARGET_HOST-ar" # to create the archive of .o files
@@ -22,8 +22,6 @@ export BOOT_DIR="/boot"
 # sysroot
 export SYSROOT="$(pwd)/sysroot"
 export CC="$CC --sysroot=$SYSROOT"
-
-export PATH="$(pwd)/../cross_src/cross/bin/:$PATH"
 
 if echo $TARGET_HOST | grep -Eq -- '-elf$'
 then

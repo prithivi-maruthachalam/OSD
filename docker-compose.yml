@@ -1,0 +1,22 @@
+version: '3'
+
+x-constants:
+  LUMOS_SOURCE_DIR: &LUMOS_SOURCE_DIR /lumos_source
+
+services:
+  photon-base:
+    build:
+      context: .
+      dockerfile: build.Dockerfile
+    volumes:
+      - type: bind
+        source: .
+        target: *LUMOS_SOURCE_DIR
+        bind:
+          create_host_path: true
+    working_dir: *LUMOS_SOURCE_DIR
+    command:  ["tail", "-f", "/dev/null"]
+
+  photon-builder:
+    extends: photon-base
+    command: ["/bin/bash", "iso.sh"]

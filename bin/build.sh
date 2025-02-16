@@ -1,7 +1,7 @@
 #!/bin/sh
 # set -e
 
-. ./headers.sh
+. ./bin/headers.sh
 
 for FOLDER in $MAJOR_FOLDERS
 do

@@ -1,6 +1,20 @@
-# OS Development
-Prithivi's project main directory
+# LumOS
+A work in progress kernel (maybe more someday) for the i386 arch.
+
+## Setup
+### Requirements
+Make sure you have the following tools installed
+- qemu
+- docker
+### Building
+- Running `docker-compose up photon-builder` should build the kernel and write it as a bootable image to _theOS.iso_ in the root directory.
+### Running
+- If the iso is available, you can simply run `bin/qemu.sh` to run the kernel on qemu
+### Cleanup
+- Run the `bin/clean.sh` script to remove all artifacts from a build.
+
 ## DIR structure
+```
 .  
 ├── kernel  
 │   ├── arch  
@@ -15,17 +29,7 @@ Prithivi's project main directory
 │   ├── stdlib  
 │   └── string  
 └── README.md  
+```
 
-## Info
-- Only the i386 architecture
-
-## Instructions for use
-- Add the cross/bin folder of your cross compiler to the system PATH.
-- Make sure all the relevant files in the following folders have executable permisison
-    - cross/bin
-    - cross/libexec/gcc/i686-elf/10.2.0
-    - cross/i686-elf/bin
-    
-    where cross is the root folder of our cross compiler build
-
-- Run the relevant script in the project root to build.
+# Appendix
+1. What would I even do without https://wiki.osdev.org/Expanded_Main_Page ?

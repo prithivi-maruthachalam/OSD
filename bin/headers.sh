@@ -1,7 +1,7 @@
 #!/bin/bash
 # set -e
 
-. ./config.sh
+. ./bin/config.sh
 
 # first "installer" after config, so make sysroot dir
 mkdir -p $SYSROOT
