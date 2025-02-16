@@ -4,7 +4,7 @@ x-constants:
   LUMOS_SOURCE_DIR: &LUMOS_SOURCE_DIR /lumos_source
 
 services:
-  photon-base:
+  lumos-builder-base:
     build:
       context: .
       dockerfile: build.Dockerfile
@@ -14,9 +14,9 @@ services:
         target: *LUMOS_SOURCE_DIR
         bind:
           create_host_path: true
-    working_dir: *LUMOS_SOURCE_DIR
+    working_dir: *LUMOS_SOURCE_DIR # Not necessary, but for clarity
     command:  ["tail", "-f", "/dev/null"]
 
-  photon-builder:
-    extends: photon-base
-    command: ["/bin/bash", "bin/iso.sh"]
+  lumos-builder-build:
+    extends: lumos-builder-base
+    command: bash -c "bin/clean.sh && bin/iso.sh"

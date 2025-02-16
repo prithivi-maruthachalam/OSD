@@ -7,7 +7,7 @@ Make sure you have the following tools installed
 - qemu
 - docker
 ### Building
-- Running `docker-compose up photon-builder` should build the kernel and write it as a bootable image to _theOS.iso_ in the root directory.
+- Running `docker-compose up lumos-builder-build` should build the kernel and write it as a bootable image to _theOS.iso_ in the root directory.
 ### Running
 - If the iso is available, you can simply run `bin/qemu.sh` to run the kernel on qemu
 ### Cleanup
