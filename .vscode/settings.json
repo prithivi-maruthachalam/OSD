@@ -1,0 +1,11 @@
+{
+    "files.associations": {
+        "utils.h": "c",
+        "tty.h": "c",
+        "gdt.h": "c",
+        "stdio.h": "c",
+        "keyboard.h": "c",
+        "pmm.h": "c",
+        "string.h": "c"
+    }
+}

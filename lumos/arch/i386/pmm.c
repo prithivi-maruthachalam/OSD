@@ -130,54 +130,6 @@ void init_pmm(multiboot_info_t *mbtStructure)
     printZones(memory_zones);
 }
 
-// todo: store the last allocated offset in each zone. maybe start searching from there?
-void *pmm_alloc2(){
-    logf("\n[pmm_alloc] : trying to allocate 1 block\n");
-
-    // find the first zone with free blocks
-    struct pm_zone_t *current_zone = memory_zones;
-    while (current_zone && current_zone->free == 0)
-        current_zone = current_zone->next_zone;
-        
-    if(!current_zone){
-        logf("no free zones\n");
-        return NULL;
-    }
-
-    logf("searching in zone starting at %x\n", current_zone->start);
-
-    // find first word which has atleast one unset bit
-    uint32_t i = 0;
-    while (current_zone->bitmap[i / WORD] == 0xFFFFFFFF && i < current_zone->length)
-        i += WORD;
-
-    // this should never really happen
-    if(i >= current_zone->length){
-        logf("no free words in zone\n");
-        return NULL;
-    }
-
-    logf("searching in word %d\n", i);
-
-    // find first unset bit in word
-    uint32_t end = i + 32;
-    while (i < end && test_bit(current_zone->bitmap, i) != 0)
-        i++;
-    
-    // this shouldn't happen either
-    if(i >= end){
-        logf("no free blocks in word\n");
-        return NULL;
-    }
-
-    logf("returning block at %d\n", i);
-
-    set_bit(current_zone->bitmap, i);   // set block to used
-    current_zone->free--;               // reduce number of free blocks in zone
-
-    return (void *) GET_ADDRESS(current_zone->start, i, BLOCK_SIZE);
-}
-
 void *pmm_alloc(){
     logf("\n[pmm_alloc] : trying to allocate 1 block\n");
 
