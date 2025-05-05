@@ -1,7 +1,7 @@
 #!/bin/sh
 # set -e
 
-. ./build.sh # this will create and populate sysroot with the executables
+. ./bin/build.sh # this will create and populate sysroot with the executables
 
 mkdir -p isodir/boot/grub
 cp sysroot/boot/theOS.kernel isodir/boot/theOS.kernel

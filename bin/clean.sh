@@ -1,7 +1,7 @@
 #!/bin/sh
 
-# set -e
-. ./config.sh
+set -e
+. ./bin/config.sh
 
 for FOLDER in $MAJOR_FOLDERS
 do
@@ -11,4 +11,4 @@ done
 
 rm -rf sysroot
 rm -rf isodir
-rm *.iso
+rm -f *.iso
